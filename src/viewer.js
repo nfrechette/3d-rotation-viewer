@@ -210,35 +210,41 @@ export class Viewer {
     buildRotations() {
         this.buildRotationLines();
 
+        // Frame of reference (left handed):
+        // X = Red (forward)
+        // Y = Green (up)
+        // Z = Blue (right)
+
+        const axisLength = 5.0;
+        const angleLength = 1.5;
+
         // Setup our raw rotation
-        const rawAxisYaw = MathUtils.degToRad(this.state.rawAxisYaw);
+        const rawAxisYaw = -MathUtils.degToRad(this.state.rawAxisYaw);          // Flip yaw's sign to be more intuitive
         const rawAxisPitch = MathUtils.degToRad(this.state.rawAxisPitch);
-        const rawAngle = MathUtils.degToRad(this.state.rawAngle);
-        // Flip yaw's sign to be more intuitive
-        const rawRotationEuler = new Euler(0.0, -rawAxisYaw, rawAxisPitch, 'XYZ');
-        const rawRotationDir = new Vector3(1, 0, 0).applyEuler(rawRotationEuler).normalize();
-        this.rawRotation.setFromAxisAngle(rawRotationDir, rawAngle);
-        const rawAngleDir = new Vector3(0, 1, 0).applyQuaternion(this.rawRotation);
+        const rawAngle = -MathUtils.degToRad(this.state.rawAngle);              // Flip angle's sign to be more intuitive
+
+        const rawRotationEuler = new Euler(0.0, rawAxisYaw, rawAxisPitch, 'XYZ');
+        const rawRotationAxis = new Vector3(axisLength, 0, 0).applyEuler(rawRotationEuler);
+        this.rawRotation.setFromAxisAngle(rawRotationAxis.clone().normalize(), rawAngle);
+        const rawRotationAngle = new Vector3(0, 0, angleLength)
+            .applyEuler(rawRotationEuler)
+            .applyQuaternion(this.rawRotation)
+            .add(rawRotationAxis);
 
         // Setup our lossy rotation
-        const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
+        const lossyAxisYaw = -MathUtils.degToRad(this.state.lossyAxisYaw);      // Flip yaw's sign to be more intuitive
         const lossyAxisPitch = MathUtils.degToRad(this.state.lossyAxisPitch);
-        const lossyAngle = MathUtils.degToRad(this.state.lossyAngle);
-        // Flip yaw's sign to be more intuitive
-        const lossyRotationEuler = new Euler(0.0, -lossyAxisYaw, lossyAxisPitch, 'XYZ');
-        const lossyRotationDir = new Vector3(1, 0, 0).applyEuler(lossyRotationEuler).normalize();
-        this.lossyRotation.setFromAxisAngle(lossyRotationDir, lossyAngle);
-        const lossyAngleDir = new Vector3(0, 1, 0).applyQuaternion(this.lossyRotation);
+        const lossyAngle = -MathUtils.degToRad(this.state.lossyAngle);          // Flip angle's sign to be more intuitive
+
+        const lossyRotationEuler = new Euler(0.0, lossyAxisYaw, lossyAxisPitch, 'XYZ');
+        const lossyRotationAxis = new Vector3(axisLength, 0, 0).applyEuler(lossyRotationEuler);
+        this.lossyRotation.setFromAxisAngle(lossyRotationAxis.clone().normalize(), lossyAngle);
+        const lossyRotationAngle = new Vector3(0, 0, angleLength)
+            .applyEuler(lossyRotationEuler)
+            .applyQuaternion(this.lossyRotation)
+            .add(lossyRotationAxis);
 
         // Update the line segments that highlights the rotations
-        const axisLength = 5.0;
-        const rollLength = 1.5;
-
-        const rawRotationAxis = rawRotationDir.clone().multiplyScalar(axisLength);
-        const rawRotationAngle = rawRotationAxis.clone().add(rawAngleDir.clone().multiplyScalar(rollLength));
-        const lossyRotationAxis = lossyRotationDir.clone().multiplyScalar(axisLength);
-        const lossyRotationAngle = lossyRotationAxis.clone().add(lossyAngleDir.clone().multiplyScalar(rollLength));
-
         const rotationLinesVertices = this.rotationLines.geometry.attributes.position.array;
         rawRotationAxis.toArray(rotationLinesVertices, 3);
         rawRotationAxis.toArray(rotationLinesVertices, 6);
