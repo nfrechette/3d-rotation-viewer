@@ -255,9 +255,22 @@ export class Viewer {
     }
 
     buildErrorHistogram() {
-        if (this.errorHistogramSVG != null) {
+        if (this.errorHistogram != null) {
             return;
         }
+
+        this.errorHistogram = {
+            svg: null,
+            curve: null,
+
+            width: 0,
+            height: 0,
+
+            xScale: null,
+            xAxis: null,
+            yScale: null,
+            yAxis: null,
+        };
 
         const histogramWrap = document.createElement('div');
         this.el.appendChild(histogramWrap);
@@ -268,6 +281,9 @@ export class Viewer {
         const width = 350 - margin.left - margin.right;
         const height = 260 - margin.top - margin.bottom;
 
+        this.errorHistogram.width = width;
+        this.errorHistogram.height = height;
+
         const svg = d3.select("#histogram")
             .append("svg")
             .attr("width", width + margin.left + margin.right)
@@ -275,31 +291,28 @@ export class Viewer {
             .append("g")
             .attr("transform",
                 `translate(${margin.left},${margin.top})`);
+        this.errorHistogram.svg = svg;
 
         const x = d3.scaleLinear()
             .domain([0, this.state.numPoints])
             .range([0, width]);
-        this.errorHistogramX = svg.append("g")
+        this.errorHistogram.xAxis = svg.append("g")
             .attr("transform", `translate(0, ${height})`)
             .call(d3.axisBottom(x));
+        this.errorHistogram.xScale = x;
 
         const y = d3.scaleLinear()
             .range([height, 0]);
-        this.errorHistogramY = svg.append("g")
-            .call(d3.axisLeft(y));;
-
-        this.errorHistogramSVG = svg;
-        this.errorHistogramXScale = x;
-        this.errorHistogramYScale = y;
-        this.errorHistogramHeight = height;
+        this.errorHistogram.yAxis = svg.append("g")
+            .call(d3.axisLeft(y));
+        this.errorHistogram.yScale = y;
     }
 
     updateErrorHistogram() {
         this.buildErrorHistogram();
 
-        const x = this.errorHistogramXScale;
-        const y = this.errorHistogramYScale;
-        const height = this.errorHistogramHeight;
+        const x = this.errorHistogram.xScale;
+        const y = this.errorHistogram.yScale;
 
         // Sort our error largest first
         const data = this.errorPerVertex.sort(function(a, b) { return b - a; });
@@ -307,8 +320,8 @@ export class Viewer {
         // We pad the X axis to bound the curve on both ends
         x.domain([0, data.length + 2]);
         y.domain([0, d3.max(data)]);
-        this.errorHistogramX.call(d3.axisBottom(x));
-        this.errorHistogramY.call(d3.axisLeft(y));
+        this.errorHistogram.xAxis.call(d3.axisBottom(x));
+        this.errorHistogram.yAxis.call(d3.axisLeft(y));
 
         // Map our density curve and pad it
         const density = data.map(function(x, index) {
@@ -317,8 +330,8 @@ export class Viewer {
         density.unshift([0, 0.0]);
         density.push([4001, 0.0]);
 
-        if (this.curve == null) {
-            this.curve = this.errorHistogramSVG.append("path")
+        if (this.errorHistogram.curve == null) {
+            this.errorHistogram.curve = this.errorHistogram.svg.append("path")
                 .attr("class", "mypath")
                 .datum(density)
                 .attr("fill", "#69b3a2")
@@ -333,7 +346,7 @@ export class Viewer {
                 );
         }
 
-        this.curve
+        this.errorHistogram.curve
             .datum(density)
             .transition()
             .duration(1000)
@@ -354,9 +367,7 @@ export class Viewer {
         // TODO:
         //  - add error color scaling
         //  - add error plane drawing
-        //  - rename histogram stuff
         //  - make y axis [0, 2.0] to avoid rescaling
-        //  - add to github for history
 
         this.sphereVertices.forEach((v) => {
             const rawVertex = v.clone().applyQuaternion(this.rawRotation);
