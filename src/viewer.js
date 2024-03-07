@@ -404,11 +404,11 @@ export class Viewer {
     }
 
     resize() {
-        const { clientHeight, clientWidth } = this.el.parentElement;
+        const aspectRatio = this.el.clientWidth / this.el.clientHeight;
 
-        this.camera.aspect = clientWidth / clientHeight;
+        this.camera.aspect = aspectRatio;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(clientWidth, clientHeight);
+        this.renderer.setSize(this.el.clientWidth, this.el.clientHeight);
     }
 
     setupGUI() {
