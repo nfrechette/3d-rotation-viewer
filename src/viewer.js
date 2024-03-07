@@ -78,8 +78,8 @@ export class Viewer {
 
     animate() {
         if (this.state.isDirty) {
-            this.buildSphere();
-            this.buildRotations();
+            this.updateSphere();
+            this.updateRotations();
             this.calculateError();
             this.updateErrorHistogram();
             this.state.isDirty = false;
@@ -125,7 +125,7 @@ export class Viewer {
         this.scene.add(gridHelper);
     }
 
-    buildSphere() {
+    updateSphere() {
         if (this.sphere != null && this.sphere.geometry.getAttribute('position').array.length == this.state.numPoints * 3) {
             return;
         }
@@ -207,7 +207,7 @@ export class Viewer {
         this.scene.add(rotationLines);
     }
 
-    buildRotations() {
+    updateRotations() {
         this.buildRotationLines();
 
         // Frame of reference (left handed):
