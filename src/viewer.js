@@ -231,29 +231,22 @@ export class Viewer {
         const lossyAngleDir = new Vector3(0, 1, 0).applyQuaternion(this.lossyRotation);
 
         // Update the line segments that highlights the rotations
-        const axisLength = 5;
+        const axisLength = 5.0;
         const rollLength = 1.5;
-        const rotationLinesVertices = this.rotationLines.geometry.getAttribute('position').array;
-        rotationLinesVertices[3] = rawRotationDir.x * axisLength;
-        rotationLinesVertices[4] = rawRotationDir.y * axisLength;
-        rotationLinesVertices[5] = rawRotationDir.z * axisLength;
-        rotationLinesVertices[6] = rawRotationDir.x * axisLength;
-        rotationLinesVertices[7] = rawRotationDir.y * axisLength;
-        rotationLinesVertices[8] = rawRotationDir.z * axisLength;
-        rotationLinesVertices[9] = rawRotationDir.x * axisLength + rawAngleDir.x * rollLength;
-        rotationLinesVertices[10] = rawRotationDir.y * axisLength + rawAngleDir.y * rollLength;
-        rotationLinesVertices[11] = rawRotationDir.z * axisLength + rawAngleDir.z * rollLength;
-        rotationLinesVertices[15] = lossyRotationDir.x * axisLength;
-        rotationLinesVertices[16] = lossyRotationDir.y * axisLength;
-        rotationLinesVertices[17] = lossyRotationDir.z * axisLength;
-        rotationLinesVertices[18] = lossyRotationDir.x * axisLength;
-        rotationLinesVertices[19] = lossyRotationDir.y * axisLength;
-        rotationLinesVertices[20] = lossyRotationDir.z * axisLength;
-        rotationLinesVertices[21] = lossyRotationDir.x * axisLength + lossyAngleDir.x * rollLength;
-        rotationLinesVertices[22] = lossyRotationDir.y * axisLength + lossyAngleDir.y * rollLength;
-        rotationLinesVertices[23] = lossyRotationDir.z * axisLength + lossyAngleDir.z * rollLength;
 
-        this.rotationLines.geometry.setAttribute('position', new Float32BufferAttribute(rotationLinesVertices, 3));
+        const rawRotationAxis = rawRotationDir.clone().multiplyScalar(axisLength);
+        const rawRotationAngle = rawRotationAxis.clone().add(rawAngleDir.clone().multiplyScalar(rollLength));
+        const lossyRotationAxis = lossyRotationDir.clone().multiplyScalar(axisLength);
+        const lossyRotationAngle = lossyRotationAxis.clone().add(lossyAngleDir.clone().multiplyScalar(rollLength));
+
+        const rotationLinesVertices = this.rotationLines.geometry.attributes.position.array;
+        rawRotationAxis.toArray(rotationLinesVertices, 3);
+        rawRotationAxis.toArray(rotationLinesVertices, 6);
+        rawRotationAngle.toArray(rotationLinesVertices, 9);
+        lossyRotationAxis.toArray(rotationLinesVertices, 15);
+        lossyRotationAxis.toArray(rotationLinesVertices, 18);
+        lossyRotationAngle.toArray(rotationLinesVertices, 21);
+        this.rotationLines.geometry.attributes.position.needsUpdate = true;
     }
 
     buildErrorHistogram() {
@@ -390,17 +383,16 @@ export class Viewer {
             normalizedErrorPerVertex.push(normalizedError);
         });
 
-        const sphereVertexColors = this.sphere.geometry.getAttribute('color').array;
+        const sphereVertexColors = this.sphere.geometry.attributes.color.array;
         normalizedErrorPerVertex.forEach((error, vertexIndex) => {
             const hue = (1.0 - error) * 240;
             const saturation = 100.0;
             const lightness = 50.0;
+
             const color = new Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-            sphereVertexColors[(vertexIndex * 3) + 0] = color.r;
-            sphereVertexColors[(vertexIndex * 3) + 1] = color.g;
-            sphereVertexColors[(vertexIndex * 3) + 2] = color.b;
+            color.toArray(sphereVertexColors, vertexIndex * 3);
         });
-        this.sphere.geometry.setAttribute('color', new Float32BufferAttribute(sphereVertexColors, 3));
+        this.sphere.geometry.attributes.color.needsUpdate = true;
     }
 
     resize() {
