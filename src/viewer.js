@@ -93,9 +93,9 @@ export class Viewer {
 
     setupCamera() {
         const fov = 60;
-        const aspectRatio = this.el.clientWidth / this.el.clientHeight
-        const near = 0.01
-        const far = 1000
+        const aspectRatio = this.el.clientWidth / this.el.clientHeight;
+        const near = 0.01;
+        const far = 1000;
         this.camera = new PerspectiveCamera(fov, aspectRatio, near, far);
         this.scene.add(this.camera);
     }
