@@ -315,20 +315,20 @@ export class Viewer {
         const y = this.errorHistogram.yScale;
 
         // Sort our error largest first
-        const data = this.errorPerVertex.sort(function(a, b) { return b - a; });
+        const data = this.errorPerVertex.toSorted(function(a, b) { return b - a; });
 
         // We pad the X axis to bound the curve on both ends
-        x.domain([0, data.length + 2]);
-        y.domain([0, d3.max(data)]);
+        data.unshift(0.0);
+        data.push(0.0);
+
+        // Update our axes and their domain
+        x.domain([0, data.length]);
+        y.domain([0.0, 2.0]);
         this.errorHistogram.xAxis.call(d3.axisBottom(x));
         this.errorHistogram.yAxis.call(d3.axisLeft(y));
 
-        // Map our density curve and pad it
-        const density = data.map(function(x, index) {
-            return [index + 1, x];
-        });
-        density.unshift([0, 0.0]);
-        density.push([4001, 0.0]);
+        // Map our density curve
+        const density = data.map(function(x, index) { return [index, x]; });
 
         if (this.errorHistogram.curve == null) {
             this.errorHistogram.curve = this.errorHistogram.svg.append("path")
@@ -367,7 +367,6 @@ export class Viewer {
         // TODO:
         //  - add error color scaling
         //  - add error plane drawing
-        //  - make y axis [0, 2.0] to avoid rescaling
 
         this.sphereVertices.forEach((v) => {
             const rawVertex = v.clone().applyQuaternion(this.rawRotation);
