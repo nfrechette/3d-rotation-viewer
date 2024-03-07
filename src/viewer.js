@@ -61,8 +61,6 @@ export class Viewer {
 
         // TODO:
         // - add 3d scale support
-        // - make the coordinate frame axes thicker to better see them
-        // - make the rotation lines thicker
 
         // Pull back the camera a bit
         this.camera.position.x = -6.0;
@@ -115,12 +113,12 @@ export class Viewer {
     }
 
     setupAxesAndGrid() {
-        const axesHelper = new AxesHelper(50);
+        const axisLength = 50;
+        const axesHelper = new AxesHelper(axisLength);
         this.scene.add(axesHelper);
 
-        const size = 10;
-        const divisions = 10;
-
+        const size = 8;
+        const divisions = 8;
         const gridHelper = new GridHelper(size, divisions);
         this.scene.add(gridHelper);
     }
