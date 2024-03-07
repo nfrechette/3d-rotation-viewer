@@ -396,9 +396,9 @@ export class Viewer {
         const sphereVertexColors = this.sphere.geometry.getAttribute('color').array;
         normalizedErrorPerVertex.forEach((error, vertexIndex) => {
             const hue = (1.0 - error) * 240;
-            //const saturation = 100.0;
-            //const lightness = 50.0;
-            const color = new Color('hsl(' + hue + ', 100%, 50%)');
+            const saturation = 100.0;
+            const lightness = 50.0;
+            const color = new Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
             sphereVertexColors[(vertexIndex * 3) + 0] = color.r;
             sphereVertexColors[(vertexIndex * 3) + 1] = color.g;
             sphereVertexColors[(vertexIndex * 3) + 2] = color.b;
