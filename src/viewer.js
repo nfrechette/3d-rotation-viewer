@@ -36,6 +36,7 @@ export class Viewer {
             lossyAxisYaw: 0.0,
             lossyAxisPitch: 0.0,
             lossyAngle: 0.0,
+            normalizeColor: false,
             isDirty: true,
         };
 
@@ -61,6 +62,7 @@ export class Viewer {
 
         // TODO:
         // - add 3d scale support
+        // - add error plane drawing
 
         // Pull back the camera a bit
         this.camera.position.x = -6.0;
@@ -359,39 +361,34 @@ export class Viewer {
 
     calculateError() {
         this.errorPerVertex = [];
-        //let minError = 10000000.0;
-        //let maxError = -10000000.0;
-        let minError = 0.0;
-        let maxError = 2.0;
 
-        // TODO:
-        //  - add error color scaling
-        //  - add error plane drawing
+        let minError = 10000000.0;
+        let maxError = -10000000.0;
 
         this.sphereVertices.forEach((v) => {
             const rawVertex = v.clone().applyQuaternion(this.rawRotation);
             const lossyVertex = v.clone().applyQuaternion(this.lossyRotation);
 
-            // Use distance squared so scale lower/higher values more
             const error = rawVertex.distanceTo(lossyVertex);
             this.errorPerVertex.push(error);
 
-            //minError = Math.min(minError, error);
-            //maxError = Math.max(maxError, error);
+            minError = Math.min(minError, error);
+            maxError = Math.max(maxError, error);
         });
+
+        // If we don't normalize colors or if the error is contant, we use
+        // the largest bounds possible: [0.0, 2.0]
+        if (!this.state.normalizeColor || (maxError - minError) < 0.000001) {
+            minError = 0.0;
+            maxError = 2.0;
+        }
 
         const errorRange = maxError - minError;
         const normalizedErrorPerVertex = [];
         this.errorPerVertex.forEach((v) => {
-            if (errorRange > 0.0) {
-                const normalizedError = (v - minError) / errorRange;
-                normalizedErrorPerVertex.push(normalizedError);
-                //normalizedErrorPerVertex.push(v);
-            } else {
-                normalizedErrorPerVertex.push(v);
-            }
+            const normalizedError = (v - minError) / errorRange;
+            normalizedErrorPerVertex.push(normalizedError);
         });
-        //console.log(normalizedErrorPerVertex.sort());
 
         const sphereVertexColors = this.sphere.geometry.getAttribute('color').array;
         normalizedErrorPerVertex.forEach((error, vertexIndex) => {
@@ -430,6 +427,8 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
+
+            this.optionsFolder.add(this.state, 'normalizeColor'),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
