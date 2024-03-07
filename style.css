@@ -1,0 +1,165 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #F5F5F5;
+    height: 100%;
+    overflow: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.wrap {
+    display: flex;
+    width: 100vw;
+    flex-grow: 1;
+    position: relative;
+}
+
+.placeholder {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 0.5em;
+    background: #EEE;
+    padding: 2em;
+    text-align: center;
+}
+
+.placeholder p {
+    font-size: 1.2rem;
+    color: #999;
+}
+
+.viewer {
+    width: 100%;
+    height: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+    position: absolute;
+    top: 0;
+    z-index: 0;
+}
+
+.axes {
+    width: 100px;
+    height: 100px;
+    margin: 20px;
+    padding: 0px;
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.gui-wrap {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.gui-wrap > .main {
+    pointer-events: all;
+    max-height: 100%;
+    overflow: auto;
+}
+
+.dg li.gui-stats:not(.folder) {
+    height: auto;
+}
+
+.histogram-wrap {
+    position: absolute;
+    /*top: 0;
+    //right: 0;*/
+    bottom: 0;
+    left: 0;
+}
+
+/******************************************************************************
+* Header
+*/
+
+header {
+    display: flex;
+    background: #353535;
+    padding: 0 2em;
+    height: 4rem;
+    line-height: 4rem;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    box-shadow: 0px 0px 8px 2px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+
+    -webkit-app-region: drag;
+}
+
+header h1,
+header .item,
+header .separator {
+    color: #F5F5F5;
+    font-weight: 300;
+    line-height: 4rem;
+    margin: 0;
+}
+
+header h1 {
+    font-size: 1.4rem;
+}
+
+header h1>a {
+    color: inherit;
+    font-size: inherit;
+    text-decoration: inherit;
+}
+
+header .item {
+    padding: 0 1em;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background ease 0.2s;
+
+    -webkit-app-region: no-drag;
+}
+
+header .item:hover {
+    background: #444;
+}
+
+header button.item:hover {
+    color: #000;
+}
+
+header .separator {
+    margin: 0 0.2em;
+    opacity: 0.2;
+}
+
+header h1+.separator {
+    margin-left: 1em;
+}
+
+.flex-grow {
+    flex-grow: 1;
+}
+
+@media screen and (max-width: 700px) {
+    header h1 {
+        font-size: 1em;
+    }
+
+    .layout-md {
+        display: none;
+    }
+}
