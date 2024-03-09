@@ -36,7 +36,7 @@ export class Viewer {
             lossyAxisYaw: 0.0,
             lossyAxisPitch: 0.0,
             lossyAngle: 0.0,
-            normalizeColor: false,
+            normalizeHeatMap: false,
             isDirty: true,
         };
 
@@ -375,9 +375,9 @@ export class Viewer {
             maxError = Math.max(maxError, error);
         });
 
-        // If we don't normalize colors or if the error is contant, we use
+        // If we don't normalize heat map colors or if the error is contant, we use
         // the largest bounds possible: [0.0, 2.0]
-        if (!this.state.normalizeColor || (maxError - minError) < 0.000001) {
+        if (!this.state.normalizeHeatMap || (maxError - minError) < 0.000001) {
             minError = 0.0;
             maxError = 2.0;
         }
@@ -410,7 +410,7 @@ export class Viewer {
     }
 
     setupGUI() {
-        const gui = this.gui = new GUI({ autoPlace: false, width: 260, hideable: true });
+        const gui = this.gui = new GUI({ autoPlace: false, width: 300, hideable: true });
 
         this.optionsFolder = gui.addFolder('Options');
         this.optionsFolder.closed = false;
@@ -426,7 +426,7 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
 
-            this.optionsFolder.add(this.state, 'normalizeColor'),
+            this.optionsFolder.add(this.state, 'normalizeHeatMap'),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
