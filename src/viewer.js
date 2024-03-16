@@ -68,6 +68,7 @@ export class Viewer {
         this.camera.position.x = -6.0;
         this.camera.position.y = 3.0;
         this.camera.position.z = 2.2;
+        this.prevCameraPosition = this.camera.position.clone();
         this.controls.update();
 
         window.addEventListener('resize', this.resize.bind(this), false);
@@ -77,15 +78,24 @@ export class Viewer {
     }
 
     animate() {
+        let shouldRender = false;
+
         if (this.state.isDirty) {
             this.updateSphere();
             this.updateRotations();
             this.calculateError();
             this.updateErrorHistogram();
             this.state.isDirty = false;
+            shouldRender = true;
+        }
+        else if (this.prevCameraPosition.distanceToSquared(this.camera.position) > 0.00001) {
+            this.prevCameraPosition = this.camera.position.clone();
+            shouldRender = true;
         }
 
-        this.renderer.render(this.scene, this.camera);
+        if (shouldRender) {
+            this.renderer.render(this.scene, this.camera);
+        }
 
         requestAnimationFrame(this.animate);
     }
