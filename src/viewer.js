@@ -394,13 +394,13 @@ export class Viewer {
         const errorRange = maxError - minError;
         const normalizedErrorPerVertex = [];
         this.errorPerVertex.forEach((v) => {
-            const normalizedError = (v - minError) / errorRange;
+            const normalizedError = MathUtils.clamp((v - minError) / errorRange, 0.0, 1.0);
             normalizedErrorPerVertex.push(normalizedError);
         });
 
         const sphereVertexColors = this.sphere.geometry.attributes.color.array;
         normalizedErrorPerVertex.forEach((error, vertexIndex) => {
-            const hue = (1.0 - error) * 240;
+            const hue = (1.0 - error) * 240.0;
             const saturation = 100.0;
             const lightness = 50.0;
 
