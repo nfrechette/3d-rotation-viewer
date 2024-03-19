@@ -224,36 +224,36 @@ export class Viewer {
     updateRotations() {
         this.buildRotationLines();
 
-        // Frame of reference (left handed):
-        // X = Red (forward)
-        // Y = Green (up)
-        // Z = Blue (right)
+        // Frame of reference (right handed):
+        // X+ = Red (right)
+        // Y+ = Green (up)
+        // Z- = Blue (forward)
 
         const axisLength = 5.0;
         const angleLength = 1.5;
 
         // Setup our raw rotation
-        const rawAxisYaw = -MathUtils.degToRad(this.state.rawAxisYaw);          // Flip yaw's sign to be more intuitive
+        const rawAxisYaw = MathUtils.degToRad(this.state.rawAxisYaw);
         const rawAxisPitch = MathUtils.degToRad(this.state.rawAxisPitch);
-        const rawAngle = -MathUtils.degToRad(this.state.rawAngle);              // Flip angle's sign to be more intuitive
+        const rawAngle = MathUtils.degToRad(this.state.rawAngle);
 
-        const rawRotationEuler = new Euler(0.0, rawAxisYaw, rawAxisPitch, 'XYZ');
-        const rawRotationAxis = new Vector3(axisLength, 0, 0).applyEuler(rawRotationEuler);
+        const rawRotationEuler = new Euler(rawAxisPitch, rawAxisYaw, 0.0, 'XYZ');
+        const rawRotationAxis = new Vector3(0.0, 0.0, axisLength).applyEuler(rawRotationEuler);
         this.rawRotation.setFromAxisAngle(rawRotationAxis.clone().normalize(), rawAngle);
-        const rawRotationAngle = new Vector3(0, 0, angleLength)
+        const rawRotationAngle = new Vector3(angleLength, 0.0, 0.0)
             .applyEuler(rawRotationEuler)
             .applyQuaternion(this.rawRotation)
             .add(rawRotationAxis);
 
         // Setup our lossy rotation
-        const lossyAxisYaw = -MathUtils.degToRad(this.state.lossyAxisYaw);      // Flip yaw's sign to be more intuitive
+        const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
         const lossyAxisPitch = MathUtils.degToRad(this.state.lossyAxisPitch);
-        const lossyAngle = -MathUtils.degToRad(this.state.lossyAngle);          // Flip angle's sign to be more intuitive
+        const lossyAngle = MathUtils.degToRad(this.state.lossyAngle);
 
-        const lossyRotationEuler = new Euler(0.0, lossyAxisYaw, lossyAxisPitch, 'XYZ');
-        const lossyRotationAxis = new Vector3(axisLength, 0, 0).applyEuler(lossyRotationEuler);
+        const lossyRotationEuler = new Euler(lossyAxisPitch, lossyAxisYaw, 0.0, 'XYZ');
+        const lossyRotationAxis = new Vector3(0.0, 0.0, axisLength).applyEuler(lossyRotationEuler);
         this.lossyRotation.setFromAxisAngle(lossyRotationAxis.clone().normalize(), lossyAngle);
-        const lossyRotationAngle = new Vector3(0, 0, angleLength)
+        const lossyRotationAngle = new Vector3(angleLength, 0.0, 0.0)
             .applyEuler(lossyRotationEuler)
             .applyQuaternion(this.lossyRotation)
             .add(lossyRotationAxis);
