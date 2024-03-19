@@ -65,7 +65,6 @@ export class Viewer {
 
         // TODO:
         // - add 3d scale support
-        // - add error plane drawing
 
         // Pull back the camera a bit
         this.camera.position.x = -6.0;
