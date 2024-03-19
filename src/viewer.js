@@ -10,6 +10,8 @@ import {
     LineSegments,
     MathUtils,
     PerspectiveCamera,
+    Plane,
+    PlaneHelper,
     Points,
     PointsMaterial,
     Quaternion,
@@ -37,6 +39,7 @@ export class Viewer {
             lossyAxisPitch: 0.0,
             lossyAngle: 0.0,
             normalizeHeatMap: false,
+            showErrorPlane: true,
             isDirty: true,
         };
 
@@ -85,6 +88,8 @@ export class Viewer {
             this.updateRotations();
             this.calculateError();
             this.updateErrorHistogram();
+            this.updateErrorPlane();
+
             this.state.isDirty = false;
             shouldRender = true;
         }
@@ -192,10 +197,10 @@ export class Viewer {
         }
 
         const vertices = [
-            0, 0, 0, 0, 0, 0,    // raw dir
-            0, 0, 0, 0, 0, 0,    // raw roll
-            0, 0, 0, 0, 0, 0,    // lossy dir
-            0, 0, 0, 0, 0, 0,    // lossy roll
+            0, 0, 0, 0, 0, 0,    // raw dir     [0, 3]
+            0, 0, 0, 0, 0, 0,    // raw roll    [6, 9]
+            0, 0, 0, 0, 0, 0,    // lossy dir   [12, 15]
+            0, 0, 0, 0, 0, 0,    // lossy roll  [18, 21]
         ];
 
         const colors = [
@@ -410,6 +415,32 @@ export class Viewer {
         this.sphere.geometry.attributes.color.needsUpdate = true;
     }
 
+    updateErrorPlane() {
+        if (this.errorPlane == null) {
+            this.errorPlane = new Plane();
+            this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, new Color(1.0, 1.0, 1.0).getHex());
+            this.scene.add(this.errorPlaneHelper);
+        }
+
+        /*
+        // Both of these are equivalent and yield the same plane
+        const rawRotationAxis = new Vector3(this.rawRotation.x, this.rawRotation.y, this.rawRotation.z);
+        const lossyRotationAxis = new Vector3(this.lossyRotation.x, this.lossyRotation.y, this.lossyRotation.z);
+
+        const errorPlaneNormal = lossyRotationAxis.clone()
+            .cross(rawRotationAxis.clone())
+            .add(lossyRotationAxis.clone().multiplyScalar(this.rawRotation.w))
+            .sub(rawRotationAxis.clone().multiplyScalar(this.lossyRotation.w));
+        */
+        const errorRotationDelta = this.lossyRotation.clone().conjugate().multiply(this.rawRotation);
+
+        // Update our plane object
+        const errorPlaneNormal = new Vector3(errorRotationDelta.x, errorRotationDelta.y, errorRotationDelta.z)
+            .normalize();
+        this.errorPlane.set(errorPlaneNormal, 0.0);
+        this.errorPlaneHelper.size = this.state.showErrorPlane ? 5 : 0;
+    }
+
     resize() {
         const aspectRatio = this.el.clientWidth / this.el.clientHeight;
 
@@ -436,6 +467,7 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
 
             this.optionsFolder.add(this.state, 'normalizeHeatMap'),
+            this.optionsFolder.add(this.state, 'showErrorPlane'),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
