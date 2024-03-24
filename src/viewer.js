@@ -336,8 +336,9 @@ export class Viewer {
         data.push(0.0);
 
         // Update our axes and their domain
+        const maxError = Math.max(data[1], 2.0);
         x.domain([0, data.length]);
-        y.domain([0.0, 2.0]);
+        y.domain([0.0, maxError]);
         this.errorHistogram.xAxis.call(d3.axisBottom(x));
         this.errorHistogram.yAxis.call(d3.axisLeft(y));
 
