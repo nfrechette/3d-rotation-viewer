@@ -84,7 +84,7 @@ export class Viewer {
 
         if (this.state.isDirty) {
             this.updateSphere();
-            this.updateRotations();
+            this.updateTransforms();
             this.calculateError();
             this.updateErrorHistogram();
             this.updateErrorPlane();
@@ -190,7 +190,7 @@ export class Viewer {
         this.scene.add(dot);
     }
 
-    buildRotationLines() {
+    buildWidgetLines() {
         if (this.rotationLines != null) {
             return;
         }
@@ -220,8 +220,8 @@ export class Viewer {
         this.scene.add(rotationLines);
     }
 
-    updateRotations() {
-        this.buildRotationLines();
+    updateTransforms() {
+        this.buildWidgetLines();
 
         // Frame of reference (right handed):
         // X+ = Red (right)
@@ -231,7 +231,7 @@ export class Viewer {
         const axisLength = 5.0;
         const angleLength = 1.5;
 
-        // Setup our raw rotation
+        // Setup our raw transform
         const rawAxisYaw = MathUtils.degToRad(this.state.rawAxisYaw);
         const rawAxisPitch = MathUtils.degToRad(this.state.rawAxisPitch);
         const rawAngle = MathUtils.degToRad(this.state.rawAngle);
@@ -244,7 +244,7 @@ export class Viewer {
             .applyQuaternion(this.rawRotation)
             .add(rawRotationAxis);
 
-        // Setup our lossy rotation
+        // Setup our lossy transform
         const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
         const lossyAxisPitch = MathUtils.degToRad(this.state.lossyAxisPitch);
         const lossyAngle = MathUtils.degToRad(this.state.lossyAngle);
