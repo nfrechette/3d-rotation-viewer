@@ -446,6 +446,7 @@ export class Viewer {
         this.camera.aspect = aspectRatio;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(this.el.clientWidth, this.el.clientHeight);
+        this.state.isDirty = true;
     }
 
     setupGUI() {
