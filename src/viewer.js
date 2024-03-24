@@ -478,7 +478,7 @@ export class Viewer {
     updateErrorPlane() {
         if (this.errorPlane == null) {
             this.errorPlane = new Plane();
-            this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, new Color(1.0, 1.0, 1.0).getHex());
+            this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, 0xffffff);
             this.scene.add(this.errorPlaneHelper);
         }
 
