@@ -6,7 +6,9 @@ import {
     Euler,
     Float32BufferAttribute,
     GridHelper,
+    Line,
     LineBasicMaterial,
+    LineDashedMaterial,
     LineSegments,
     MathUtils,
     PerspectiveCamera,
@@ -35,16 +37,26 @@ export class Viewer {
             rawAxisYaw: 0.0,
             rawAxisPitch: 0.0,
             rawAngle: 20.0,
+            rawTranslationX: 0.0,
+            rawTranslationY: 0.0,
+            rawTranslationZ: 0.0,
             lossyAxisYaw: 61.4,
             lossyAxisPitch: 0.0,
             lossyAngle: 128.6,
+            lossyTranslationX: 2.0,
+            lossyTranslationY: 5.0,
+            lossyTranslationZ: 0.0,
             normalizeHeatMap: true,
             showErrorPlane: true,
             isDirty: true,
         };
 
+        this.transformWidgets = {};
+
         this.rawRotation = new Quaternion();
+        this.rawTranslation = new Vector3();
         this.lossyRotation = new Quaternion();
+        this.lossyTranslation = new Vector3();
 
         this.scene = new Scene();
 
@@ -218,6 +230,38 @@ export class Viewer {
 
         this.transformLines = transformLines;
         this.scene.add(transformLines);
+
+        const rawTranslationMaterial = new LineBasicMaterial({
+            color: 0xffff00
+        });
+
+        const points = [];
+        points.push(new Vector3(0, 0, 0));
+        points.push(new Vector3(0, 0, 0));
+
+        const rawTranslationGeometry = new BufferGeometry().setFromPoints(points);
+        const rawTranslationLine = new Line(rawTranslationGeometry, rawTranslationMaterial);
+        this.rawTranslationLine = rawTranslationLine;
+        this.scene.add(rawTranslationLine);
+
+        const lossyTranslationMaterial = new LineDashedMaterial({
+            color: 0xffff00,
+            linewidth: 1,
+            scale: 1,
+            dashSize: 0.25,
+            gapSize: 0.25,
+        });
+
+        const lossyTranslationGeometry = new BufferGeometry().setFromPoints(points);
+        const lossyTranslationLine = new Line(lossyTranslationGeometry, lossyTranslationMaterial);
+        this.lossyTranslationLine = lossyTranslationLine;
+        this.scene.add(lossyTranslationLine);
+
+        this.transformWidgets.translation =
+        {
+            raw: rawTranslationLine,
+            lossy: lossyTranslationLine,
+        };
     }
 
     updateTransforms() {
@@ -243,6 +287,7 @@ export class Viewer {
             .applyEuler(rawRotationEuler)
             .applyQuaternion(this.rawRotation)
             .add(rawRotationAxis);
+        this.rawTranslation.set(this.state.rawTranslationX, this.state.rawTranslationY, this.state.rawTranslationZ);
 
         // Setup our lossy transform
         const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
@@ -256,6 +301,7 @@ export class Viewer {
             .applyEuler(lossyRotationEuler)
             .applyQuaternion(this.lossyRotation)
             .add(lossyRotationAxis);
+        this.lossyTranslation.set(this.state.lossyTranslationX, this.state.lossyTranslationY, this.state.lossyTranslationZ);
 
         // Update the line segments that highlights the transform
         const transformLinesVertices = this.transformLines.geometry.attributes.position.array;
@@ -266,6 +312,15 @@ export class Viewer {
         lossyRotationAxis.toArray(transformLinesVertices, 18);
         lossyRotationAngle.toArray(transformLinesVertices, 21);
         this.transformLines.geometry.attributes.position.needsUpdate = true;
+
+        const rawTranslationLineVertices = this.transformWidgets.translation.raw.geometry.attributes.position.array;
+        this.rawTranslation.toArray(rawTranslationLineVertices, 3);
+        this.transformWidgets.translation.raw.geometry.attributes.position.needsUpdate = true;
+
+        const lossyTranslationLineVertices = this.transformWidgets.translation.lossy.geometry.attributes.position.array;
+        this.lossyTranslation.toArray(lossyTranslationLineVertices, 3);
+        this.transformWidgets.translation.lossy.computeLineDistances();
+        this.transformWidgets.translation.lossy.geometry.attributes.position.needsUpdate = true;
     }
 
     buildErrorHistogram() {
@@ -379,8 +434,13 @@ export class Viewer {
         let maxError = -10000000.0;
 
         this.sphereVertices.forEach((v) => {
-            const rawVertex = v.clone().applyQuaternion(this.rawRotation);
-            const lossyVertex = v.clone().applyQuaternion(this.lossyRotation);
+            const rawVertex = v.clone()
+                .applyQuaternion(this.rawRotation)
+                .add(this.rawTranslation);
+
+            const lossyVertex = v.clone()
+                .applyQuaternion(this.lossyRotation)
+                .add(this.lossyTranslation);
 
             const error = rawVertex.distanceTo(lossyVertex);
             this.errorPerVertex.push(error);
@@ -462,10 +522,16 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'rawAxisYaw', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'rawAxisPitch', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'rawAngle', -180.0, 180.0, 0.1),
+            this.optionsFolder.add(this.state, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.optionsFolder.add(this.state, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.optionsFolder.add(this.state, 'rawTranslationZ', -20.0, 20.0, 0.1),
 
             this.optionsFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.optionsFolder.add(this.state, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.optionsFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.optionsFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
 
             this.optionsFolder.add(this.state, 'normalizeHeatMap'),
             this.optionsFolder.add(this.state, 'showErrorPlane'),
