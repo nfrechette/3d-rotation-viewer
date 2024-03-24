@@ -191,7 +191,7 @@ export class Viewer {
     }
 
     buildWidgetLines() {
-        if (this.rotationLines != null) {
+        if (this.transformLines != null) {
             return;
         }
 
@@ -214,10 +214,10 @@ export class Viewer {
         geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
 
         const material = new LineBasicMaterial({ vertexColors: true, toneMapped: false });
-        const rotationLines = new LineSegments(geometry, material);
+        const transformLines = new LineSegments(geometry, material);
 
-        this.rotationLines = rotationLines;
-        this.scene.add(rotationLines);
+        this.transformLines = transformLines;
+        this.scene.add(transformLines);
     }
 
     updateTransforms() {
@@ -257,15 +257,15 @@ export class Viewer {
             .applyQuaternion(this.lossyRotation)
             .add(lossyRotationAxis);
 
-        // Update the line segments that highlights the rotations
-        const rotationLinesVertices = this.rotationLines.geometry.attributes.position.array;
-        rawRotationAxis.toArray(rotationLinesVertices, 3);
-        rawRotationAxis.toArray(rotationLinesVertices, 6);
-        rawRotationAngle.toArray(rotationLinesVertices, 9);
-        lossyRotationAxis.toArray(rotationLinesVertices, 15);
-        lossyRotationAxis.toArray(rotationLinesVertices, 18);
-        lossyRotationAngle.toArray(rotationLinesVertices, 21);
-        this.rotationLines.geometry.attributes.position.needsUpdate = true;
+        // Update the line segments that highlights the transform
+        const transformLinesVertices = this.transformLines.geometry.attributes.position.array;
+        rawRotationAxis.toArray(transformLinesVertices, 3);
+        rawRotationAxis.toArray(transformLinesVertices, 6);
+        rawRotationAngle.toArray(transformLinesVertices, 9);
+        lossyRotationAxis.toArray(transformLinesVertices, 15);
+        lossyRotationAxis.toArray(transformLinesVertices, 18);
+        lossyRotationAngle.toArray(transformLinesVertices, 21);
+        this.transformLines.geometry.attributes.position.needsUpdate = true;
     }
 
     buildErrorHistogram() {
