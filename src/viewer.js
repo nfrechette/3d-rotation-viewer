@@ -46,7 +46,6 @@ export class Viewer {
             lossyTranslationX: 2.0,
             lossyTranslationY: 5.0,
             lossyTranslationZ: 0.0,
-            normalizeHeatMap: true,
             showMaxErrorLocation: true,
             isDirty: true,
         };
@@ -461,9 +460,10 @@ export class Viewer {
             maxError = Math.max(maxError, error);
         });
 
-        // If we don't normalize heat map colors or if the error is contant, we use
-        // the largest bounds possible: [0.0, 2.0]
-        if (!this.state.normalizeHeatMap || (maxError - minError) < 0.000001) {
+        console.log(`Sphere max error: ${maxError}`);
+
+        // If we don't have any error, we use: [0.0, 2.0]
+        if ((maxError - minError) < 0.000001) {
             minError = 0.0;
             maxError = 2.0;
         }
@@ -654,7 +654,6 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
             this.optionsFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
 
-            this.optionsFolder.add(this.state, 'normalizeHeatMap'),
             this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
