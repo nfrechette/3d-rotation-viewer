@@ -427,6 +427,18 @@ export class Viewer {
             );
     }
 
+    computeVertexError(vertex) {
+        const rawVertex = vertex.clone()
+            .applyQuaternion(this.rawRotation)
+            .add(this.rawTranslation);
+
+        const lossyVertex = vertex.clone()
+            .applyQuaternion(this.lossyRotation)
+            .add(this.lossyTranslation);
+
+        return rawVertex.distanceTo(lossyVertex);
+    }
+
     calculateError() {
         this.errorPerVertex = [];
 
@@ -442,7 +454,7 @@ export class Viewer {
                 .applyQuaternion(this.lossyRotation)
                 .add(this.lossyTranslation);
 
-            const error = rawVertex.distanceTo(lossyVertex);
+            const error = this.computeVertexError(v);
             this.errorPerVertex.push(error);
 
             minError = Math.min(minError, error);
