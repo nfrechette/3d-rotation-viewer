@@ -492,6 +492,19 @@ export class Viewer {
             this.errorPlane = new Plane();
             this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, 0xffffff);
             this.scene.add(this.errorPlaneHelper);
+
+            const errorPointMaterial = new LineBasicMaterial({
+                color: 0xffffff
+            });
+
+            const points = [];
+            points.push(new Vector3(0, 0, 0));
+            points.push(new Vector3(0, 0, 0));
+
+            const errorPointGeometry = new BufferGeometry().setFromPoints(points);
+            const errorPointLine = new Line(errorPointGeometry, errorPointMaterial);
+            this.errorPointLine = errorPointLine;
+            this.scene.add(errorPointLine);
         }
 
         /*
@@ -504,13 +517,84 @@ export class Viewer {
             .add(lossyRotationAxis.clone().multiplyScalar(this.rawRotation.w))
             .sub(rawRotationAxis.clone().multiplyScalar(this.lossyRotation.w));
         */
-        const errorRotationDelta = this.lossyRotation.clone().conjugate().multiply(this.rawRotation);
 
-        // Update our plane object
-        const errorPlaneNormal = new Vector3(errorRotationDelta.x, errorRotationDelta.y, errorRotationDelta.z)
+        /*
+        Delta computation using Realtime Math:
+        qvvf delta = qvv_mul(lossy, qvv_inverse(raw));
+
+        quatf inv_raw_q = quat_conjugate(raw.q);
+        vector4f inv_raw_t = quat_mul_vector3(raw.t, inv_raw_q);
+        quatf delta_q = quat_mul(lossy.q, inv_raw_q);
+        vector4f delta_t = vector_add(quat_mul_vector3(lossy.t, inv_raw_q), inv_raw_t);
+        */
+
+        // Compute our delta transform
+        const invRawRotation = this.rawRotation.clone()
+            .conjugate();
+        const invRawTranslation = this.rawTranslation.clone()
+            .applyQuaternion(invRawRotation)
+            .negate();
+
+        const deltaRotation = invRawRotation.clone().multiply(this.lossyRotation);
+
+        const errorPlaneNormal = new Vector3(deltaRotation.x, deltaRotation.y, deltaRotation.z).normalize();
+        const deltaRotationAngleRad = Math.acos(MathUtils.clamp(deltaRotation.w, -1.0, 1.0)) * 2.0;
+
+        const deltaTranslation = this.lossyTranslation.clone().applyQuaternion(invRawRotation).add(invRawTranslation);
+
+        // Half the delta rotation, negated so we can remove it
+        const negHalfDeltaRotation = new Quaternion().setFromAxisAngle(errorPlaneNormal, deltaRotationAngleRad * -0.5);
+
+        // We project the delta translation onto error plane
+        // The points that rotate the most lives on it
+        const deltaTranslationCrossNormal = deltaTranslation.clone()
+            .cross(errorPlaneNormal)
             .normalize();
+
+        // Our cross-point lives at the midpoint of the delta rotation
+        // since the optimal delta path rotates towards the translation
+        // On error plane, we remove half the delta rotation
+        const errorPoint = deltaTranslationCrossNormal.clone()
+            .applyQuaternion(negHalfDeltaRotation);
+
+        // Calculate the error of our desired point, it should match the max error we found
+        console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
+
+        if (!this.state.showErrorPlane) {
+            errorPoint.set(0.0, 0.0, 0.0);
+        }
+
+        const maxDeltaRotationError = 2.0 * 1.0 * Math.sin(Math.acos(deltaRotation.w));
+        console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
+
+        const maxDeltaTranslationError = deltaTranslation.length();
+        console.log(`Max delta translation error: ${maxDeltaTranslationError}`);
+
+        // Long parallelogram diagonal length:
+        // sqrt(longSide^2 + shortSide^2 + 2 * longSide * shortSide * cos(angleBetweenShortAndLong))
+        const paraCosAngle = 1.0 - deltaTranslation.clone().normalize().dot(errorPlaneNormal);
+        const paraShortSide = maxDeltaRotationError;
+        const paraLongSide = maxDeltaTranslationError;
+        const maxParaError = Math.sqrt(
+            (paraLongSide * paraLongSide) +
+            (paraShortSide * paraShortSide) +
+            (2.0 * paraLongSide * paraShortSide * paraCosAngle));
+        console.log(`Max parallelogram error: ${maxParaError}`);
+
+        //console.log(`Inv raw translation: x=${invRawTranslation.x}, y=${invRawTranslation.y}, z=${invRawTranslation.z}`);
+        //console.log(`Inv lossy translation: x=${invLossyTranslation.x}, y=${invLossyTranslation.y}, z=${invLossyTranslation.z}`);
+        //console.log(`Delta rotation: x=${errorPlaneNormal.x}, y=${errorPlaneNormal.y}, z=${errorPlaneNormal.z}, angle=${MathUtils.radToDeg(deltaRotationAngleRad)}`);
+        //console.log(`Delta translation: x=${deltaTranslation.x}, y=${deltaTranslation.y}, z=${deltaTranslation.z}`);
+        //console.log(`Error point: x=${errorPoint.x}, y=${errorPoint.y}, z=${errorPoint.z}`);
+
+        // Update our error objects
         this.errorPlane.set(errorPlaneNormal, 0.0);
         this.errorPlaneHelper.size = this.state.showErrorPlane ? 5 : 0;
+
+        const errorPointLineSize = 2.0;
+        const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
+        errorPoint.clone().multiplyScalar(errorPointLineSize).toArray(errorPointLineVertices, 3);
+        this.errorPointLine.geometry.attributes.position.needsUpdate = true;
     }
 
     resize() {
