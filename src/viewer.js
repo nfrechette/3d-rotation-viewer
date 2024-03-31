@@ -585,7 +585,19 @@ export class Viewer {
         // Calculate the error of our desired point, it should match the max error we found
         console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
 
-        const maxDeltaRotationError = 2.0 * 1.0 * Math.sin(Math.acos(deltaRotation.w));
+        // To compute the max error from the rotation delta, we proceed as follows:
+        // We first take the quaternion dot product between the raw and lossy rotations
+        // This gives us the cosine of the half rotation angle (remember that quaternions use a half angle representation)
+        // We know the sphere radius (1.0 in our case) and we can create a right-angle by splitting
+        // the max error contribution in two equal halves.
+        // We can then use the angle cosine and the sphere radius to find the adjacent side of our triangle
+        // Using the hypothenus and the adjacent side, we can compute the other side by leveraging the right-angle
+        // This yields half the max rotation error
+        const sphereRadius = 1.0;
+        const rawLossyQuatDot = this.rawRotation.dot(this.lossyRotation);
+        const rawLossyErrorTriangleAdjacent = rawLossyQuatDot * sphereRadius;
+        const halfMaxDeltaRotationError = Math.sqrt(Math.max((sphereRadius * sphereRadius) - (rawLossyErrorTriangleAdjacent * rawLossyErrorTriangleAdjacent), 0.0))
+        const maxDeltaRotationError = halfMaxDeltaRotationError * 2.0;
         console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
 
         const maxDeltaTranslationError = deltaTranslation.length();
