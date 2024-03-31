@@ -47,7 +47,7 @@ export class Viewer {
             lossyTranslationY: 5.0,
             lossyTranslationZ: 0.0,
             normalizeHeatMap: true,
-            showErrorPlane: true,
+            showMaxErrorLocation: true,
             isDirty: true,
         };
 
@@ -585,7 +585,7 @@ export class Viewer {
         // Calculate the error of our desired point, it should match the max error we found
         console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
 
-        if (!this.state.showErrorPlane) {
+        if (!this.state.showMaxErrorLocation) {
             errorPoint.set(0.0, 0.0, 0.0);
         }
 
@@ -614,7 +614,7 @@ export class Viewer {
 
         // Update our error objects
         this.errorPlane.set(errorPlaneNormal, 0.0);
-        this.errorPlaneHelper.size = this.state.showErrorPlane ? 5 : 0;
+        this.errorPlaneHelper.size = this.state.showMaxErrorLocation ? 5 : 0;
 
         const errorPointLineSize = 2.0;
         const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
@@ -632,7 +632,7 @@ export class Viewer {
     }
 
     setupGUI() {
-        const gui = this.gui = new GUI({ autoPlace: false, width: 300, hideable: true });
+        const gui = this.gui = new GUI({ autoPlace: false, width: 350, hideable: true });
 
         this.optionsFolder = gui.addFolder('Options');
         this.optionsFolder.closed = false;
@@ -655,7 +655,7 @@ export class Viewer {
             this.optionsFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
 
             this.optionsFolder.add(this.state, 'normalizeHeatMap'),
-            this.optionsFolder.add(this.state, 'showErrorPlane'),
+            this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
