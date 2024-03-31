@@ -600,6 +600,7 @@ export class Viewer {
         const maxDeltaRotationError = halfMaxDeltaRotationError * 2.0;
         console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
 
+        // The max translation error is simply its length
         const maxDeltaTranslationError = deltaTranslation.length();
         console.log(`Max delta translation error: ${maxDeltaTranslationError}`);
 
