@@ -560,6 +560,10 @@ export class Viewer {
         // If the point ends up at zero, it means that the delta translation is colinear
         // with the delta rotation plane normal and thus all points on that plane
         // will move by the same amount. As such, we can pick any point on the plane.
+        //
+        // If the rotation delta is zero, then all points move by the same amount of
+        // translation delta and they thus all have the same error. As such, we can pick
+        // any point on the sphere.
         if (errorPoint.lengthSq() < 0.0001) {
             // Generate a random point on our sphere
             // To ensure consistent results, we pick between hardcoded perpendicular results
