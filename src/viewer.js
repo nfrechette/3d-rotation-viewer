@@ -585,10 +585,6 @@ export class Viewer {
         // Calculate the error of our desired point, it should match the max error we found
         console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
 
-        if (!this.state.showMaxErrorLocation) {
-            errorPoint.set(0.0, 0.0, 0.0);
-        }
-
         const maxDeltaRotationError = 2.0 * 1.0 * Math.sin(Math.acos(deltaRotation.w));
         console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
 
@@ -616,7 +612,7 @@ export class Viewer {
         this.errorPlane.set(errorPlaneNormal, 0.0);
         this.errorPlaneHelper.size = this.state.showMaxErrorLocation ? 5 : 0;
 
-        const errorPointLineSize = 2.0;
+        const errorPointLineSize = this.state.showMaxErrorLocation ? 2.0 : 0;
         const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
         errorPoint.clone().multiplyScalar(errorPointLineSize).toArray(errorPointLineVertices, 3);
         this.errorPointLine.geometry.attributes.position.needsUpdate = true;
