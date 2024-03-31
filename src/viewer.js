@@ -554,8 +554,27 @@ export class Viewer {
         // Our cross-point lives at the midpoint of the delta rotation
         // since the optimal delta path rotates towards the translation
         // On error plane, we remove half the delta rotation
-        const errorPoint = deltaTranslationCrossNormal.clone()
+        let errorPoint = deltaTranslationCrossNormal.clone()
             .applyQuaternion(negHalfDeltaRotation);
+
+        // If the point ends up at zero, it means that the delta translation is colinear
+        // with the delta rotation plane normal and thus all points on that plane
+        // will move by the same amount. As such, we can pick any point on the plane.
+        if (errorPoint.lengthSq() < 0.0001) {
+            // Generate a random point on our sphere
+            // To ensure consistent results, we pick between hardcoded perpendicular results
+            let randomPoint = new Vector3(0.2, 0.0, 0.7).normalize();
+
+            // Make sure it isn't colinear with our plane normal
+            if (Math.abs(randomPoint.dot(errorPlaneNormal)) > 0.9) {
+                randomPoint.set(0.0, 0.7, 0.3).normalize();
+            }
+
+            // Project it onto our plane
+            errorPoint = randomPoint.sub(errorPlaneNormal.clone()
+                                            .multiplyScalar(randomPoint.dot(errorPlaneNormal)))
+                            .normalize();
+        }
 
         // Calculate the error of our desired point, it should match the max error we found
         console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
