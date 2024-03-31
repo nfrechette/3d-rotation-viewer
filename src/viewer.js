@@ -575,6 +575,8 @@ export class Viewer {
             }
 
             // Project it onto our plane
+            // If the plane normal is zero as a result of a zero rotation delta,
+            // we'll remove nothing from the random point and thus use it as-is.
             errorPoint = randomPoint.sub(errorPlaneNormal.clone()
                                             .multiplyScalar(randomPoint.dot(errorPlaneNormal)))
                             .normalize();
