@@ -596,24 +596,45 @@ export class Viewer {
         const sphereRadius = 1.0;
         const rawLossyQuatDot = this.rawRotation.dot(this.lossyRotation);
         const rawLossyErrorTriangleAdjacent = rawLossyQuatDot * sphereRadius;
-        const halfMaxDeltaRotationError = Math.sqrt(Math.max((sphereRadius * sphereRadius) - (rawLossyErrorTriangleAdjacent * rawLossyErrorTriangleAdjacent), 0.0))
+        const halfMaxDeltaRotationError =
+            Math.sqrt(Math.max((sphereRadius * sphereRadius) - (rawLossyErrorTriangleAdjacent * rawLossyErrorTriangleAdjacent), 0.0))
         const maxDeltaRotationError = halfMaxDeltaRotationError * 2.0;
-        console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
+        //console.log(`Max delta rotation error: ${maxDeltaRotationError}`);
 
         // The max translation error is simply its length
-        const maxDeltaTranslationError = deltaTranslation.length();
-        console.log(`Max delta translation error: ${maxDeltaTranslationError}`);
+        //console.log(`Max delta translation error: ${deltaTranslation.length()}`);
 
-        // Long parallelogram diagonal length:
-        // sqrt(longSide^2 + shortSide^2 + 2 * longSide * shortSide * cos(angleBetweenShortAndLong))
-        const paraCosAngle = 1.0 - deltaTranslation.clone().normalize().dot(errorPlaneNormal);
-        const paraShortSide = maxDeltaRotationError;
-        const paraLongSide = maxDeltaTranslationError;
-        const maxParaError = Math.sqrt(
-            (paraLongSide * paraLongSide) +
-            (paraShortSide * paraShortSide) +
-            (2.0 * paraLongSide * paraShortSide * paraCosAngle));
-        console.log(`Max parallelogram error: ${maxParaError}`);
+        // To compute the combined max error of the rotation and translation, we observe that
+        // they form a triangle where one side has length equal to the max rotation error and
+        // lives on the rotation delta plane. Another side has the translation delta.
+        // Both of them form a triangle by forming an angle between them.
+        // To avoid computing angles and using trigonometric functions, we instead build a larger
+        // triangle where the hypothenus is the translation delta and one side is the projection
+        // of the translation delta along the rotation plane normal. Using both sides, we can
+        // compute the third using the square-root. This gives us a second portion of a larger
+        // segment along the rotation plane. We add this second portion to our max rotation delta
+        // error to form a larger right-angled triangle. That triangle still has the same side
+        // as the first along the rotation plane normal. Again, using a square-root, we can compute
+        // our third and final side we are looking for.
+        const deltaTranslationAlongPlane = deltaTranslation.dot(errorPlaneNormal);
+        const deltaTranslationAlongPlaneSq = deltaTranslationAlongPlane * deltaTranslationAlongPlane;
+        const innerSide =
+            Math.sqrt(Math.max(deltaTranslation.lengthSq() - deltaTranslationAlongPlaneSq, 0.0));
+        const innerFullSide = innerSide + maxDeltaRotationError;
+        const maxDeltaTransformError =
+            Math.sqrt(Math.max(deltaTranslationAlongPlaneSq + (innerFullSide * innerFullSide), 0.0));
+
+        // Edge cases:
+        //   - Note that when the translation delta is zero, our distance along the normal will
+        //     also be zero. This yields the translation contribution along the rotation plane
+        //     to also be zero. We correctly end up taking the square-root of the squared max delta
+        //     rotation error.
+        //   - When the rotation delta is zero, only the translation portion will remain along
+        //     the rotation plane normal (we can use any direction for the plane normal). This leaves
+        //     us with a single triangle and we correctly re-compute the delta translation edge length.
+        //   - When both are zero, we end up with zero as well by construction.
+
+        console.log(`Computed max error: ${maxDeltaTransformError}`);
 
         //console.log(`Inv raw translation: x=${invRawTranslation.x}, y=${invRawTranslation.y}, z=${invRawTranslation.z}`);
         //console.log(`Inv lossy translation: x=${invLossyTranslation.x}, y=${invLossyTranslation.y}, z=${invLossyTranslation.z}`);
