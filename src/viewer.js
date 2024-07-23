@@ -445,14 +445,6 @@ export class Viewer {
         let maxError = -10000000.0;
 
         this.sphereVertices.forEach((v) => {
-            const rawVertex = v.clone()
-                .applyQuaternion(this.rawRotation)
-                .add(this.rawTranslation);
-
-            const lossyVertex = v.clone()
-                .applyQuaternion(this.lossyRotation)
-                .add(this.lossyTranslation);
-
             const error = this.computeVertexError(v);
             this.errorPerVertex.push(error);
 
