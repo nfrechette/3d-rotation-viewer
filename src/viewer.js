@@ -40,12 +40,18 @@ export class Viewer {
             rawTranslationX: 0.0,
             rawTranslationY: 0.0,
             rawTranslationZ: 0.0,
+            rawScaleX: 1.0,
+            rawScaleY: 1.0,
+            rawScaleZ: 1.0,
             lossyAxisYaw: 61.4,
             lossyAxisPitch: 0.0,
             lossyAngle: 128.6,
             lossyTranslationX: 2.0,
             lossyTranslationY: 5.0,
             lossyTranslationZ: 0.0,
+            lossyScaleX: 1.0,
+            lossyScaleY: 1.0,
+            lossyScaleZ: 1.0,
             showMaxErrorLocation: true,
             isDirty: true,
         };
@@ -54,8 +60,10 @@ export class Viewer {
 
         this.rawRotation = new Quaternion();
         this.rawTranslation = new Vector3();
+        this.rawScale = new Vector3();
         this.lossyRotation = new Quaternion();
         this.lossyTranslation = new Vector3();
+        this.lossyScale = new Vector3();
 
         this.scene = new Scene();
 
@@ -287,6 +295,7 @@ export class Viewer {
             .applyQuaternion(this.rawRotation)
             .add(rawRotationAxis);
         this.rawTranslation.set(this.state.rawTranslationX, this.state.rawTranslationY, this.state.rawTranslationZ);
+        this.rawScale.set(this.state.rawScaleX, this.state.rawScaleY, this.state.rawScaleZ);
 
         // Setup our lossy transform
         const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
@@ -301,6 +310,7 @@ export class Viewer {
             .applyQuaternion(this.lossyRotation)
             .add(lossyRotationAxis);
         this.lossyTranslation.set(this.state.lossyTranslationX, this.state.lossyTranslationY, this.state.lossyTranslationZ);
+        this.lossyScale.set(this.state.lossyScaleX, this.state.lossyScaleY, this.state.lossyScaleZ);
 
         // Update the line segments that highlights the transform
         const transformLinesVertices = this.transformLines.geometry.attributes.position.array;
@@ -427,11 +437,16 @@ export class Viewer {
     }
 
     computeVertexError(vertex) {
+        // qvv_mul_point3:
+        // vector_add(quat_mul_vector3(vector_mul(qvv.scale, point), qvv.rotation), qvv.translation);
+
         const rawVertex = vertex.clone()
+            .multiply(this.rawScale)
             .applyQuaternion(this.rawRotation)
             .add(this.rawTranslation);
 
         const lossyVertex = vertex.clone()
+            .multiply(this.lossyScale)
             .applyQuaternion(this.lossyRotation)
             .add(this.lossyTranslation);
 
@@ -677,6 +692,9 @@ export class Viewer {
             this.rawTransformFolder.add(this.state, 'rawTranslationX', -20.0, 20.0, 0.1),
             this.rawTransformFolder.add(this.state, 'rawTranslationY', -20.0, 20.0, 0.1),
             this.rawTransformFolder.add(this.state, 'rawTranslationZ', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawScaleX', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawScaleY', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         [
@@ -686,6 +704,9 @@ export class Viewer {
             this.lossyTransformFolder.add(this.state, 'lossyTranslationX', -20.0, 20.0, 0.1),
             this.lossyTransformFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
             this.lossyTransformFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyScaleX', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyScaleY', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
