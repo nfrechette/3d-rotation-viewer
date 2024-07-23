@@ -659,24 +659,33 @@ export class Viewer {
         this.optionsFolder = gui.addFolder('Options');
         this.optionsFolder.closed = false;
 
+        this.rawTransformFolder = gui.addFolder('Raw Transform');
+        this.rawTransformFolder.closed = true;
+
+        this.lossyTransformFolder = gui.addFolder('Lossy Transform');
+        this.lossyTransformFolder.closed = false;
+
         [
             this.optionsFolder.add(this.state, 'numPoints', 10, 10000, 1),
-
-            this.optionsFolder.add(this.state, 'rawAxisYaw', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'rawAxisPitch', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'rawAngle', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'rawTranslationX', -20.0, 20.0, 0.1),
-            this.optionsFolder.add(this.state, 'rawTranslationY', -20.0, 20.0, 0.1),
-            this.optionsFolder.add(this.state, 'rawTranslationZ', -20.0, 20.0, 0.1),
-
-            this.optionsFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
-            this.optionsFolder.add(this.state, 'lossyTranslationX', -20.0, 20.0, 0.1),
-            this.optionsFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
-            this.optionsFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
-
             this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
+        ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
+
+        [
+            this.rawTransformFolder.add(this.state, 'rawAxisYaw', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawAxisPitch', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawAngle', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state, 'rawTranslationZ', -20.0, 20.0, 0.1),
+        ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
+
+        [
+            this.lossyTransformFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
         ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
