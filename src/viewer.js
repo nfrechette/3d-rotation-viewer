@@ -530,9 +530,10 @@ export class Viewer {
         qvvf delta = qvv_mul(lossy, qvv_inverse(raw));
 
         quatf inv_raw_q = quat_conjugate(raw.q);
-        vector4f inv_raw_t = quat_mul_vector3(raw.t, inv_raw_q);
+        vector4f inv_raw_s = vector_reciprocal(raw.s);
+        vector4f inv_raw_t = quat_mul_vector3(vector_mul(raw.t, inv_raw_s), inv_raw_q);
         quatf delta_q = quat_mul(lossy.q, inv_raw_q);
-        vector4f delta_t = vector_add(quat_mul_vector3(lossy.t, inv_raw_q), inv_raw_t);
+        vector4f delta_t = vector_add(quat_mul_vector3(vector_mul(lossy.t, inv_raw_s), inv_raw_q), inv_raw_t);
         */
 
         // Compute our delta transform
