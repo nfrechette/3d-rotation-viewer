@@ -222,10 +222,10 @@ export class Viewer {
         ];
 
         const colors = [
-            0, 0, 1, 0, 0, 1,    // raw dir
-            0, 0, 1, 0, 0, 1,    // raw roll
-            1, 0, 0, 1, 0, 0,    // lossy dir
-            1, 0, 0, 1, 0, 0,    // lossy roll
+            0, 0, 1, 0, 0, 1,    // raw dir (blue)
+            0, 0, 1, 0, 0, 1,    // raw roll (blue)
+            1, 0, 0, 1, 0, 0,    // lossy dir (red)
+            1, 0, 0, 1, 0, 0,    // lossy roll (red)
         ];
 
         const geometry = new BufferGeometry();
@@ -238,8 +238,9 @@ export class Viewer {
         this.transformLines = transformLines;
         this.scene.add(transformLines);
 
+        const yellowColor = 0xffff00;
         const rawTranslationMaterial = new LineBasicMaterial({
-            color: 0xffff00
+            color: yellowColor
         });
 
         const points = [];
@@ -252,7 +253,7 @@ export class Viewer {
         this.scene.add(rawTranslationLine);
 
         const lossyTranslationMaterial = new LineDashedMaterial({
-            color: 0xffff00,
+            color: yellowColor,
             linewidth: 1,
             scale: 1,
             dashSize: 0.25,
@@ -496,12 +497,14 @@ export class Viewer {
 
     updateErrorLocation() {
         if (this.errorPlane == null) {
+            const whiteColor = 0xffffff;
+
             this.errorPlane = new Plane();
-            this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, 0xffffff);
+            this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, whiteColor);
             this.scene.add(this.errorPlaneHelper);
 
             const errorPointMaterial = new LineBasicMaterial({
-                color: 0xffffff
+                color: whiteColor
             });
 
             const points = [];
