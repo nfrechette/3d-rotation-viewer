@@ -98,7 +98,7 @@ export class Viewer {
             this.updateTransforms();
             this.calculateError();
             this.updateErrorHistogram();
-            this.updateErrorPlane();
+            this.updateErrorLocation();
 
             this.state.isDirty = false;
             shouldRender = true;
@@ -487,7 +487,7 @@ export class Viewer {
         this.sphere.geometry.attributes.color.needsUpdate = true;
     }
 
-    updateErrorPlane() {
+    updateErrorLocation() {
         if (this.errorPlane == null) {
             this.errorPlane = new Plane();
             this.errorPlaneHelper = new PlaneHelper(this.errorPlane, 0, 0xffffff);
