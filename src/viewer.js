@@ -39,7 +39,7 @@ export class Viewer {
     constructor(el) {
         this.el = el;
 
-        this.state = {
+        this.uiState = {
             numPoints: 4000,
             showMaxErrorLocation: true,
             mode: VIEWER_MODES[0],  // 3D Error Metric
@@ -111,14 +111,14 @@ export class Viewer {
     animate() {
         let shouldRender = false;
 
-        if (this.state.isDirty) {
+        if (this.uiState.isDirty) {
             this.updateSphere();
             this.updateTransforms();
             this.calculateError();
             this.updateErrorHistogram();
             this.updateErrorLocation();
 
-            this.state.isDirty = false;
+            this.uiState.isDirty = false;
             shouldRender = true;
         }
         else if (this.prevCameraPosition.distanceToSquared(this.camera.position) > 0.00001) {
@@ -168,14 +168,14 @@ export class Viewer {
     }
 
     updateSphere() {
-        if (this.sphere != null && this.sphere.geometry.getAttribute('position').array.length == this.state.numPoints * 3) {
+        if (this.sphere != null && this.sphere.geometry.getAttribute('position').array.length == this.uiState.numPoints * 3) {
             return;
         }
 
         this.sphereVertices = []
         this.sphereVertexColors = []
 
-        const numPoints = this.state.numPoints;
+        const numPoints = this.uiState.numPoints;
         const offset = 2.0 / numPoints;
         const increment = Math.PI * (3.0 - Math.sqrt(5.0));
         for (let pointIndex = 0; pointIndex < numPoints; ++pointIndex) {
@@ -293,7 +293,7 @@ export class Viewer {
         const axisLength = 5.0;
         const angleLength = 1.5;
 
-        const uiState = this.state.mode3DMetric;
+        const uiState = this.uiState.mode3DMetric;
 
         // Setup our raw transform
         const rawAxisYaw = MathUtils.degToRad(uiState.rawAxisYaw);
@@ -385,7 +385,7 @@ export class Viewer {
         this.errorHistogram.svg = svg;
 
         const x = d3.scaleLinear()
-            .domain([0, this.state.numPoints])
+            .domain([0, this.uiState.numPoints])
             .range([0, width]);
         this.errorHistogram.xAxis = svg.append("g")
             .attr("transform", `translate(0, ${height})`)
@@ -668,9 +668,9 @@ export class Viewer {
 
         // Update our error objects
         this.errorPlane.set(errorPlaneNormal, 0.0);
-        this.errorPlaneHelper.size = this.state.showMaxErrorLocation ? 5 : 0;
+        this.errorPlaneHelper.size = this.uiState.showMaxErrorLocation ? 5 : 0;
 
-        const errorPointLineSize = this.state.showMaxErrorLocation ? 2.0 : 0;
+        const errorPointLineSize = this.uiState.showMaxErrorLocation ? 2.0 : 0;
         const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
         errorPoint.clone().multiplyScalar(errorPointLineSize).toArray(errorPointLineVertices, 3);
         this.errorPointLine.geometry.attributes.position.needsUpdate = true;
@@ -682,7 +682,7 @@ export class Viewer {
         this.camera.aspect = aspectRatio;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(this.el.clientWidth, this.el.clientHeight);
-        this.state.isDirty = true;
+        this.uiState.isDirty = true;
     }
 
     setupGUI() {
@@ -698,34 +698,34 @@ export class Viewer {
         this.lossyTransformFolder.closed = false;
 
         [
-            this.optionsFolder.add(this.state, 'numPoints', 10, 10000, 1),
-            this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
-            this.optionsFolder.add(this.state, 'mode', VIEWER_MODES),
-        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
+            this.optionsFolder.add(this.uiState, 'numPoints', 10, 10000, 1),
+            this.optionsFolder.add(this.uiState, 'showMaxErrorLocation'),
+            this.optionsFolder.add(this.uiState, 'mode', VIEWER_MODES),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         [
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAxisYaw', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAxisPitch', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAngle', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationZ', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleZ', -5.0, 5.0, 0.1),
-        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisYaw', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisPitch', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAngle', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationZ', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleZ', -5.0, 5.0, 0.1),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         [
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAxisYaw', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAxisPitch', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationZ', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleZ', -5.0, 5.0, 0.1),
-        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisYaw', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisPitch', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationZ', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleZ', -5.0, 5.0, 0.1),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         const guiWrap = document.createElement('div');
         this.el.appendChild(guiWrap);
