@@ -147,6 +147,7 @@ export class Viewer {
 
             if (this.isMode2D()) {
                 this.updateCircle();
+                this.updateTransforms();
             } else {
                 this.updateSphere();
                 this.updateTransforms();
@@ -227,6 +228,7 @@ export class Viewer {
         this.resetCamera();
         this.resetCircle();
         this.resetSphere();
+        this.resetTransforms();
     }
 
     resetCamera() {
@@ -396,7 +398,38 @@ export class Viewer {
         this.scene.add(sphere);
     }
 
-    buildWidgetLines() {
+    resetTransforms() {
+        if (this.transformLines != null) {
+            this.scene.remove(this.transformLines);
+            this.transformLines = null;
+        }
+
+        if (this.rawTranslationLine != null) {
+            this.scene.remove(this.rawTranslationLine);
+            this.rawTranslationLine = null;
+        }
+
+        if (this.lossyTranslationLine != null) {
+            this.scene.remove(this.lossyTranslationLine);
+            this.lossyTranslationLine = null;
+        }
+    }
+
+    updateTransforms() {
+        switch (this.uiState.mode) {
+            case '2D Displacement':
+                break;
+            case '2D Error Metric':
+                break;
+            case '3D Displacement':
+                break;
+            case '3D Error Metric':
+                this.update3DMetricTransforms();
+                break;
+        }
+    }
+
+    build3DMetricWidgetLines() {
         if (this.transformLines != null) {
             return;
         }
@@ -459,8 +492,8 @@ export class Viewer {
         };
     }
 
-    updateTransforms() {
-        this.buildWidgetLines();
+    update3DMetricTransforms() {
+        this.build3DMetricWidgetLines();
 
         // Frame of reference (right handed):
         // X+ = Red (right)
