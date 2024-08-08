@@ -43,6 +43,36 @@ export class Viewer {
             numPoints: 4000,
             showMaxErrorLocation: true,
             mode: VIEWER_MODES[0],  // 3D Error Metric
+            mode2DDisp: {
+                angle: 20.0,
+                translationX: 0.0,
+                translationY: 0.0,
+                scaleX: 1.0,
+                scaleY: 1.0,
+            },
+            mode2DMetric: {
+                rawAngle: 20.0,
+                rawTranslationX: 0.0,
+                rawTranslationY: 0.0,
+                rawScaleX: 1.0,
+                rawScaleY: 1.0,
+                lossyAngle: 128.6,
+                lossyTranslationX: 2.0,
+                lossyTranslationY: 5.0,
+                lossyScaleX: 1.0,
+                lossyScaleY: 1.0,
+            },
+            mode3DDisp: {
+                axisYaw: 0.0,
+                axisPitch: 0.0,
+                angle: 20.0,
+                translationX: 0.0,
+                translationY: 0.0,
+                translationZ: 0.0,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                scaleZ: 1.0,
+            },
             mode3DMetric: {
                 rawAxisYaw: 0.0,
                 rawAxisPitch: 0.0,
@@ -697,16 +727,68 @@ export class Viewer {
         this.guiFolders.optionsFolder = gui.addFolder('Options');
         this.guiFolders.optionsFolder.closed = false;
 
-        this.guiFolders.mode3DMetric.rawTransformFolder = gui.addFolder('Raw Transform');
+        this.guiFolders.mode2DDisp.transformFolder = gui.addFolder('2D Transform');
+        this.guiFolders.mode2DDisp.transformFolder.closed = true;
+        this.guiFolders.mode2DDisp.transformFolder.domElement.style.display = 'none';
+
+        this.guiFolders.mode2DMetric.rawTransformFolder = gui.addFolder('Raw 2D Transform');
+        this.guiFolders.mode2DMetric.rawTransformFolder.closed = true;
+        this.guiFolders.mode2DMetric.rawTransformFolder.domElement.style.display = 'none';
+
+        this.guiFolders.mode2DMetric.lossyTransformFolder = gui.addFolder('Lossy 2D Transform');
+        this.guiFolders.mode2DMetric.lossyTransformFolder.closed = false;
+        this.guiFolders.mode2DMetric.lossyTransformFolder.domElement.style.display = 'none';
+
+        this.guiFolders.mode3DDisp.transformFolder = gui.addFolder('3D Transform');
+        this.guiFolders.mode3DDisp.transformFolder.closed = true;
+        this.guiFolders.mode3DDisp.transformFolder.domElement.style.display = 'none';
+
+        this.guiFolders.mode3DMetric.rawTransformFolder = gui.addFolder('Raw 3D Transform');
         this.guiFolders.mode3DMetric.rawTransformFolder.closed = true;
 
-        this.guiFolders.mode3DMetric.lossyTransformFolder = gui.addFolder('Lossy Transform');
+        this.guiFolders.mode3DMetric.lossyTransformFolder = gui.addFolder('Lossy 3D Transform');
         this.guiFolders.mode3DMetric.lossyTransformFolder.closed = false;
 
         [
             this.guiFolders.optionsFolder.add(this.uiState, 'numPoints', 10, 10000, 1),
             this.guiFolders.optionsFolder.add(this.uiState, 'showMaxErrorLocation'),
             this.guiFolders.optionsFolder.add(this.uiState, 'mode', VIEWER_MODES),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
+
+        [
+            this.guiFolders.mode2DDisp.transformFolder.add(this.uiState.mode2DDisp, 'angle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode2DDisp.transformFolder.add(this.uiState.mode2DDisp, 'translationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DDisp.transformFolder.add(this.uiState.mode2DDisp, 'translationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DDisp.transformFolder.add(this.uiState.mode2DDisp, 'scaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode2DDisp.transformFolder.add(this.uiState.mode2DDisp, 'scaleY', -5.0, 5.0, 0.1),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
+
+        [
+            this.guiFolders.mode2DMetric.rawTransformFolder.add(this.uiState.mode2DMetric, 'rawAngle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode2DMetric.rawTransformFolder.add(this.uiState.mode2DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DMetric.rawTransformFolder.add(this.uiState.mode2DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DMetric.rawTransformFolder.add(this.uiState.mode2DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode2DMetric.rawTransformFolder.add(this.uiState.mode2DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
+
+        [
+            this.guiFolders.mode2DMetric.lossyTransformFolder.add(this.uiState.mode2DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode2DMetric.lossyTransformFolder.add(this.uiState.mode2DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DMetric.lossyTransformFolder.add(this.uiState.mode2DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode2DMetric.lossyTransformFolder.add(this.uiState.mode2DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode2DMetric.lossyTransformFolder.add(this.uiState.mode2DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
+
+        [
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'axisYaw', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'axisPitch', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'angle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'translationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'translationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'translationZ', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'scaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'scaleY', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DDisp.transformFolder.add(this.uiState.mode3DDisp, 'scaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         [
