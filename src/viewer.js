@@ -41,24 +41,26 @@ export class Viewer {
 
         this.state = {
             numPoints: 4000,
-            rawAxisYaw: 0.0,
-            rawAxisPitch: 0.0,
-            rawAngle: 20.0,
-            rawTranslationX: 0.0,
-            rawTranslationY: 0.0,
-            rawTranslationZ: 0.0,
-            rawScaleX: 1.0,
-            rawScaleY: 1.0,
-            rawScaleZ: 1.0,
-            lossyAxisYaw: 61.4,
-            lossyAxisPitch: 0.0,
-            lossyAngle: 128.6,
-            lossyTranslationX: 2.0,
-            lossyTranslationY: 5.0,
-            lossyTranslationZ: 0.0,
-            lossyScaleX: 1.0,
-            lossyScaleY: 1.0,
-            lossyScaleZ: 1.0,
+            mode3DMetric: {
+                rawAxisYaw: 0.0,
+                rawAxisPitch: 0.0,
+                rawAngle: 20.0,
+                rawTranslationX: 0.0,
+                rawTranslationY: 0.0,
+                rawTranslationZ: 0.0,
+                rawScaleX: 1.0,
+                rawScaleY: 1.0,
+                rawScaleZ: 1.0,
+                lossyAxisYaw: 61.4,
+                lossyAxisPitch: 0.0,
+                lossyAngle: 128.6,
+                lossyTranslationX: 2.0,
+                lossyTranslationY: 5.0,
+                lossyTranslationZ: 0.0,
+                lossyScaleX: 1.0,
+                lossyScaleY: 1.0,
+                lossyScaleZ: 1.0,
+            },
             showMaxErrorLocation: true,
             mode: VIEWER_MODES[0],  // 3D Error Metric
             isDirty: true,
@@ -291,10 +293,12 @@ export class Viewer {
         const axisLength = 5.0;
         const angleLength = 1.5;
 
+        const uiState = this.state.mode3DMetric;
+
         // Setup our raw transform
-        const rawAxisYaw = MathUtils.degToRad(this.state.rawAxisYaw);
-        const rawAxisPitch = MathUtils.degToRad(this.state.rawAxisPitch);
-        const rawAngle = MathUtils.degToRad(this.state.rawAngle);
+        const rawAxisYaw = MathUtils.degToRad(uiState.rawAxisYaw);
+        const rawAxisPitch = MathUtils.degToRad(uiState.rawAxisPitch);
+        const rawAngle = MathUtils.degToRad(uiState.rawAngle);
 
         const rawRotationEuler = new Euler(rawAxisPitch, rawAxisYaw, 0.0, 'XYZ');
         const rawRotationAxis = new Vector3(0.0, 0.0, axisLength).applyEuler(rawRotationEuler);
@@ -303,13 +307,13 @@ export class Viewer {
             .applyEuler(rawRotationEuler)
             .applyQuaternion(this.rawRotation)
             .add(rawRotationAxis);
-        this.rawTranslation.set(this.state.rawTranslationX, this.state.rawTranslationY, this.state.rawTranslationZ);
-        this.rawScale.set(this.state.rawScaleX, this.state.rawScaleY, this.state.rawScaleZ);
+        this.rawTranslation.set(uiState.rawTranslationX, uiState.rawTranslationY, uiState.rawTranslationZ);
+        this.rawScale.set(uiState.rawScaleX, uiState.rawScaleY, uiState.rawScaleZ);
 
         // Setup our lossy transform
-        const lossyAxisYaw = MathUtils.degToRad(this.state.lossyAxisYaw);
-        const lossyAxisPitch = MathUtils.degToRad(this.state.lossyAxisPitch);
-        const lossyAngle = MathUtils.degToRad(this.state.lossyAngle);
+        const lossyAxisYaw = MathUtils.degToRad(uiState.lossyAxisYaw);
+        const lossyAxisPitch = MathUtils.degToRad(uiState.lossyAxisPitch);
+        const lossyAngle = MathUtils.degToRad(uiState.lossyAngle);
 
         const lossyRotationEuler = new Euler(lossyAxisPitch, lossyAxisYaw, 0.0, 'XYZ');
         const lossyRotationAxis = new Vector3(0.0, 0.0, axisLength).applyEuler(lossyRotationEuler);
@@ -318,8 +322,8 @@ export class Viewer {
             .applyEuler(lossyRotationEuler)
             .applyQuaternion(this.lossyRotation)
             .add(lossyRotationAxis);
-        this.lossyTranslation.set(this.state.lossyTranslationX, this.state.lossyTranslationY, this.state.lossyTranslationZ);
-        this.lossyScale.set(this.state.lossyScaleX, this.state.lossyScaleY, this.state.lossyScaleZ);
+        this.lossyTranslation.set(uiState.lossyTranslationX, uiState.lossyTranslationY, uiState.lossyTranslationZ);
+        this.lossyScale.set(uiState.lossyScaleX, uiState.lossyScaleY, uiState.lossyScaleZ);
 
         // Update the line segments that highlights the transform
         const transformLinesVertices = this.transformLines.geometry.attributes.position.array;
@@ -700,27 +704,27 @@ export class Viewer {
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         [
-            this.rawTransformFolder.add(this.state, 'rawAxisYaw', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawAxisPitch', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawAngle', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawTranslationX', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawTranslationY', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawTranslationZ', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawScaleX', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawScaleY', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.state, 'rawScaleZ', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAxisYaw', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAxisPitch', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawAngle', -180.0, 180.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawTranslationZ', -20.0, 20.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
+            this.rawTransformFolder.add(this.state.mode3DMetric, 'rawScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         [
-            this.lossyTransformFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyAxisPitch', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyAngle', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyTranslationX', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyTranslationY', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyTranslationZ', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyScaleX', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyScaleY', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.state, 'lossyScaleZ', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAxisYaw', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAxisPitch', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyTranslationZ', -20.0, 20.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
+            this.lossyTransformFolder.add(this.state.mode3DMetric, 'lossyScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
