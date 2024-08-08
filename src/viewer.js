@@ -133,13 +133,6 @@ export class Viewer {
         // TODO:
         // - add 3d scale support
 
-        // Pull back the camera a bit
-        this.camera.position.x = -6.0;
-        this.camera.position.y = 3.0;
-        this.camera.position.z = 2.2;
-        this.prevCameraPosition = this.camera.position.clone();
-        this.controls.update();
-
         window.addEventListener('resize', this.resize.bind(this), false);
 
         this.animate = this.animate.bind(this);
@@ -150,9 +143,7 @@ export class Viewer {
         let shouldRender = false;
 
         if (this.uiState.isDirty) {
-            if (this.currentMode != this.uiState.mode) {
-                this.updateMode();
-            }
+            this.updateMode();
 
             this.updateSphere();
             this.updateTransforms();
@@ -176,6 +167,10 @@ export class Viewer {
     }
 
     updateMode() {
+        if (this.currentMode === this.uiState.mode) {
+            return; // Same mode, nothing to do
+        }
+
         // Hide and reset the UI
         this.guiFolders.mode2DDisp.transformFolder.domElement.style.display = 'none';
         this.guiFolders.mode2DMetric.rawTransformFolder.domElement.style.display = 'none';
@@ -203,6 +198,31 @@ export class Viewer {
 
         // Set our new mode
         this.currentMode = this.uiState.mode;
+
+        // Reset our camera
+        this.resetCamera();
+    }
+
+    resetCamera() {
+        switch (this.uiState.mode) {
+            case '2D Displacement':
+            case '2D Error Metric':
+                // 2D camera
+                this.camera.position.x = 0.0;
+                this.camera.position.y = 0.0;
+                this.camera.position.z = 5.0;
+                break;
+            case '3D Displacement':
+            case '3D Error Metric':
+                // 3D camera
+                this.camera.position.x = -6.0;
+                this.camera.position.y = 3.0;
+                this.camera.position.z = 2.2;
+                break;
+        }
+
+        this.prevCameraPosition = this.camera.position.clone();
+        this.controls.update();
     }
 
     setupCamera() {
@@ -212,6 +232,8 @@ export class Viewer {
         const far = 1000;
         this.camera = new PerspectiveCamera(fov, aspectRatio, near, far);
         this.scene.add(this.camera);
+
+        this.prevCameraPosition = this.camera.position.clone();
     }
 
     setupRenderer() {
