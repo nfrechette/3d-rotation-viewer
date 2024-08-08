@@ -145,11 +145,15 @@ export class Viewer {
         if (this.uiState.isDirty) {
             this.updateMode();
 
-            this.updateSphere();
-            this.updateTransforms();
-            this.calculateError();
-            this.updateErrorHistogram();
-            this.updateErrorLocation();
+            if (this.isMode2D()) {
+                this.updateCircle();
+            } else {
+                this.updateSphere();
+                this.updateTransforms();
+                this.calculateError();
+                this.updateErrorHistogram();
+                this.updateErrorLocation();
+            }
 
             this.uiState.isDirty = false;
             shouldRender = true;
@@ -219,8 +223,10 @@ export class Viewer {
         // Set our new mode
         this.currentMode = this.uiState.mode;
 
-        // Reset our camera
+        // Reset everything
         this.resetCamera();
+        this.resetCircle();
+        this.resetSphere();
     }
 
     resetCamera() {
@@ -276,10 +282,76 @@ export class Viewer {
         this.scene.add(gridHelper);
     }
 
+    resetCircle() {
+        if (this.circle != null) {
+            this.scene.remove(this.circle);
+            this.circle = null;
+        }
+    }
+
+    updateCircle() {
+        if (this.circle != null && this.circle.geometry.getAttribute('position').array.length == this.uiState.numPoints * 3) {
+            return;
+        }
+
+        this.resetCircle();
+
+        this.circleVertices = []
+        this.circleVertexColors = []
+
+        const numPoints = this.uiState.numPoints;
+        const offset = 2.0 / numPoints;
+        const increment = Math.PI * (3.0 - Math.sqrt(5.0));
+        for (let pointIndex = 0; pointIndex < numPoints; ++pointIndex) {
+            const y = ((pointIndex * offset) - 1.0) + (offset / 2.0);
+            const r = Math.sqrt(1.0 - Math.pow(y, 2.0));
+
+            const phi = pointIndex * increment;
+
+            const x = Math.cos(phi) * r;
+            const z = 0.0;
+
+            this.circleVertices.push(new Vector3(x, y, z).normalize());
+            this.circleVertexColors.push(new Color(0xff0000));
+        }
+
+        this.circleVerticesArray = new Float32Array(this.circleVertices.length * 3);
+        this.circleVerticesColorArray = new Float32Array(this.circleVertices.length * 3);
+        for (let vertexIndex = 0; vertexIndex < numPoints; ++vertexIndex) {
+            const v = this.circleVertices[vertexIndex];
+            const c = this.circleVertexColors[vertexIndex];
+
+            this.circleVerticesArray[(vertexIndex * 3) + 0] = v.x;
+            this.circleVerticesArray[(vertexIndex * 3) + 1] = v.y;
+            this.circleVerticesArray[(vertexIndex * 3) + 2] = v.z;
+
+            this.circleVerticesColorArray[(vertexIndex * 3) + 0] = c.r;
+            this.circleVerticesColorArray[(vertexIndex * 3) + 1] = c.g;
+            this.circleVerticesColorArray[(vertexIndex * 3) + 2] = c.b;
+        }
+
+        const dotGeometry = new BufferGeometry();
+        dotGeometry.setAttribute('position', new BufferAttribute(this.circleVerticesArray, 3));
+        dotGeometry.setAttribute('color', new BufferAttribute(this.circleVerticesColorArray, 3));
+        const dotMaterial = new PointsMaterial({ size: 0.05, vertexColors: true });
+        const circle = new Points(dotGeometry, dotMaterial);
+        this.circle = circle;
+        this.scene.add(circle);
+    }
+
+    resetSphere() {
+        if (this.sphere != null) {
+            this.scene.remove(this.sphere);
+            this.sphere = null;
+        }
+    }
+
     updateSphere() {
         if (this.sphere != null && this.sphere.geometry.getAttribute('position').array.length == this.uiState.numPoints * 3) {
             return;
         }
+
+        this.resetSphere();
 
         this.sphereVertices = []
         this.sphereVertexColors = []
@@ -313,10 +385,6 @@ export class Viewer {
             this.sphereVerticesColorArray[(vertexIndex * 3) + 0] = c.r;
             this.sphereVerticesColorArray[(vertexIndex * 3) + 1] = c.g;
             this.sphereVerticesColorArray[(vertexIndex * 3) + 2] = c.b;
-        }
-
-        if (this.sphere != null) {
-            this.scene.remove(this.sphere);
         }
 
         const dotGeometry = new BufferGeometry();
