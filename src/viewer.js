@@ -43,11 +43,11 @@ export class Viewer {
             rawScaleX: 1.0,
             rawScaleY: 1.0,
             rawScaleZ: 1.0,
-            lossyAxisYaw: 61.4,
+            lossyAxisYaw: 0.0,//61.4,
             lossyAxisPitch: 0.0,
             lossyAngle: 128.6,
-            lossyTranslationX: 2.0,
-            lossyTranslationY: 5.0,
+            lossyTranslationX: 0.0,//2.0,
+            lossyTranslationY: 0.0,//5.0,
             lossyTranslationZ: 0.0,
             lossyScaleX: 1.0,
             lossyScaleY: 1.0,
@@ -454,6 +454,23 @@ export class Viewer {
         return rawVertex.distanceTo(lossyVertex);
     }
 
+    computeVertexErrorNS(vertex) {
+        // qvv_mul_point3:
+        // vector_add(quat_mul_vector3(vector_mul(qvv.scale, point), qvv.rotation), qvv.translation);
+
+        const rawVertex = vertex.clone()
+            //.multiply(this.rawScale)
+            .applyQuaternion(this.rawRotation)
+            .add(this.rawTranslation);
+
+        const lossyVertex = vertex.clone()
+            //.multiply(this.lossyScale)
+            .applyQuaternion(this.lossyRotation)
+            .add(this.lossyTranslation);
+
+        return rawVertex.distanceTo(lossyVertex);
+    }
+
     calculateError() {
         this.errorPerVertex = [];
 
@@ -493,6 +510,40 @@ export class Viewer {
             color.toArray(sphereVertexColors, vertexIndex * 3);
         });
         this.sphere.geometry.attributes.color.needsUpdate = true;
+    }
+
+    vectorAbs(input) {
+        return new Vector3(Math.abs(input.x), Math.abs(input.y), Math.abs(input.z));
+    }
+
+    vectorMax(input0, input1) {
+        return new Vector3(Math.max(input0.x, input1.x), Math.max(input0.y, input1.y), Math.max(input0.z, input1.z));
+    }
+
+    dominantAxis(input) {
+        if (input.x >= input.y) {
+            // x >= y
+            if (input.x >= input.z) {
+                // x >= y && x >= z
+                return new Vector3(1.0, 0.0, 0.0);
+            } else {
+                // x >= y && z > x
+                return new Vector3(0.0, 0.0, 1.0);
+            }
+        } else {
+            // y > x
+            if (input.y >= input.z) {
+                // y > x && y >= z
+                return new Vector3(0.0, 1.0, 0.0);
+            } else {
+                // y > x && z > y
+                return new Vector3(0.0, 0.0, 1.0);
+            }
+        }
+    }
+
+    vectorMaxComponent(input) {
+        return Math.max(Math.max(input.x, input.y), input.z);
     }
 
     updateErrorLocation() {
@@ -538,21 +589,129 @@ export class Viewer {
 
         quatf delta_q = quat_mul(lossy.q, inv_raw_q);
         vector4f delta_t = vector_add(quat_mul_vector3(vector_mul(lossy.t, inv_raw_s), inv_raw_q), inv_raw_t);
+        vector4f delta_s = vector_mul(lossy.s, inv_raw_s);
         */
+
+        /*
+        First we apply scale, then we rotate, and finally translate
+
+        When no scale is present, the points that rotate the most live on the delta rotation plane.
+        Points away from the plane will end up closer to the origin when projected on the plane and
+        thus move less than those already on the plane. Combined with translation, the points that
+        move the most on the plane are those that rotate the most towards/away from the delta translation.
+
+        However, when scale is present, that may not be true. There may be a point that lives further
+        away once projected onto the rotation plane. This can combine with translation in unintuitive ways.
+        The point on the sphere furthest away from the origin may not be the one rotating the most once
+        projected onto the rotation plane (e.g. scale could be perpendicular to the rotation plane).
+
+        What if we project the scale factor onto the rotation plane? We can then pick the point furthest
+        along that projected scale factor scaled by the sphere radius. That will give us the two points
+        rotate the most (pos/neg projected scale factor). However it may be that another point moves
+        more overall once translation is applied. How to find the combined point?
+
+        Consider scale in the 2D plane. The same point would move the most for the following values:
+        [2,1], [1,0.5], [1,0.8]
+        That point is the furthest along the largest scale component under pure rotation. Is it
+        still the case under translation? Perhaps we need to rotate the whole arc between the first two
+        largest extents. As such, we need to project the 3D scale on the rotation plane, then take
+        the absolute value of the scale to find the largest two extents.
+
+        Can we approximate the result by using the largest scale extent as the sphere radius?
+
+
+
+
+
+        We should be able to use the scale values to compute a conservatice sphere radius instead
+        Keep in mind that the error metric measures the error between two vertices on the sphere
+        If the sphere is scaled up/down uniformly then the error is scaled linearly
+        But if the sphere is scaled non-uniformly, our error will grow depending how far we are from
+        the ideal radius. We need to compute min/max values, and the delta between should be our error
+        Something along those lines, a conservative estimate needs to account for the scale delta
+        somehow
+
+        Things break down with non-uniform scale because it is not associative. Going back to the
+        basics, we have the following.
+
+        Our error metric:
+        a*R = b
+        a*L = c
+        error = |b - c|
+        Where:
+        a: an unknown local point around our transform
+        R: the raw version of our transform
+        L: the lossy version of our transform
+
+        We would like to find the point 'b' local to the raw transform that moves the most and maximizes the error.
+        b*R^-1*L = c
+
+        This is equivalent to removing the raw transform contribution and applying the lossy transform.
+        Thanks to associativity, we can combine both transforms into one:
+        (b*R^-1)*L = b*(R^1*L) = b*D = c
+        Where:
+        D: a delta transform between the raw and lossy transforms: (R^-1 * L)
+
+        This is what allows us with pure rotation/translation to use the delta transform to compute the point
+        that moves the most. When uniform scale is present, associativity holds and we can use the same formula.
+        However, when scale is non-uniform, we lose associativity.
+        (b*R^-1)*L != b*(R^-1*L)
+
+        This means that we have to consider the points that move the most under the inverse raw transform
+        and the lossy transform separately.
+
+        With non-uniform scale, points that live on axes with the largest absolute scale component are those
+        that move the most under pure rotation (e.g. with scale [0.1, 1, 1], points along the YZ axes that
+        intersect the sphere move the most as they are further away from the center). Mixing in translation
+        slightly complicates things since the point now rotating the most towards the translation direction
+        may not be near the points furthest from the sphere center. All we know is that the point that moves
+        the most lives on the top or bottom half of the sphere (depending on the rotation direction). Let us
+        consider the following example in 2D:
+        Rotation: clockwise 45deg
+        Translation: along the positive X axis by some value
+        Scale: [1000.0, 1.0]
+        If we look at the rotation plane and the translation direction, the point that rotates the most
+        lives at the very top, where X=0.0 if the circle is centered. However, the point that lives at
+        X=-1000.0, Y=0.0 still rotates towards the translation slightly and due to its distance from
+        the circle center, it will move a lot more even if the contribution towards the translation is
+        reduced. What we want to find is the point that rotates towards the translation direction that
+        yields an overall largest displacement. Due to the non-uniform scaling, we don't know the radius
+        at that point and so we can't calculate the rotation displacement. Can we find the radius?
+
+        If I can find the point that moves the most with the inverse raw and inverse lossy transforms,
+        then that gives me two points on my original sphere. The point that moves the most must lie along
+        the arc formed by the two points, is it the mid-point?
+
+        Can we check in excel in 2D? Try with sphere equation, rotation error equation, and translation error?
+        */
+
+        //const sphereRadius = 1.0;
+        const sphereRadius = this.vectorMaxComponent(this.vectorMax(this.vectorAbs(this.rawScale), this.vectorAbs(this.lossyScale)));
+        console.log(`Sphere radius: ${sphereRadius}`);
 
         // Compute our delta transform
         const invRawRotation = this.rawRotation.clone()
             .conjugate();
+        //const invRawScale = new Vector3(1.0, 1.0, 1.0)
+        //    .divide(this.rawScale);
         const invRawTranslation = this.rawTranslation.clone()
+            //.multiply(invRawScale)
             .applyQuaternion(invRawRotation)
-            .negate();
+            .negate();  // Negate to match ThreeJS multiplication ordering
 
         const deltaRotation = invRawRotation.clone().multiply(this.lossyRotation);
 
+        const deltaTranslation = this.lossyTranslation.clone()
+            //.multiply(invRawScale)
+            .applyQuaternion(invRawRotation)
+            .add(invRawTranslation);
+
+        //const deltaScale = this.lossyScale.clone()
+        //    .multiply(invRawScale);
+        //console.log(`Delta scale: ${deltaScale.x}, ${deltaScale.y}, ${deltaScale.z}`);
+
         const errorPlaneNormal = new Vector3(deltaRotation.x, deltaRotation.y, deltaRotation.z).normalize();
         const deltaRotationAngleRad = Math.acos(MathUtils.clamp(deltaRotation.w, -1.0, 1.0)) * 2.0;
-
-        const deltaTranslation = this.lossyTranslation.clone().applyQuaternion(invRawRotation).add(invRawTranslation);
 
         // Half the delta rotation, negated so we can remove it
         const negHalfDeltaRotation = new Quaternion().setFromAxisAngle(errorPlaneNormal, deltaRotationAngleRad * -0.5);
@@ -562,6 +721,40 @@ export class Viewer {
         const deltaTranslationCrossNormal = deltaTranslation.clone()
             .cross(errorPlaneNormal)
             .normalize();
+
+        // TODO: we can't use the delta scale to compute the dominant scale axis because if both
+        // raw and lossy have some identical non-identity scale, then the sphere is deformed regardless
+        // of the delta and the point that moves the most is on the deformed sphere even though
+        // the delta scale will be the identity scale (since the scale doesn't change between the two)
+        // And so unlike with pure rotation/translation, when scale is present, we have to consider
+        // the points from the raw/lossy spheres on the delta rotation plane. Perhaps the dominant
+        // scale axis is the dominant between the raw/lossy: project both on rotation plane, take
+        // absolute value of both, take maximum value of both, find largest axis
+
+        // TODO: Should we use the dominant scale axis to pick which point to project on the plane above
+        // with the delta translation? By using the cross product, we project on the plane at some
+        // random position. Perhaps using scale we can pick the right position instead.
+
+        // TODO: Perhaps we need to use the rotated raw scale to find the dominant axis/point since
+        // the delta transform is from raw to lossy
+        // Similarly, we can use the rotated lossy scale?
+
+        // Project raw/lossy scale on delta rotation plane
+        //const rawScaleOnRotationPlane = errorPlaneNormal.clone()
+        //    .multiplyScalar(errorPlaneNormal.dot(this.rawScale))
+        //    .negate()
+        //    .add(this.rawScale);
+        //const lossyScaleOnRotationPlane = errorPlaneNormal.clone()
+        //    .multiplyScalar(errorPlaneNormal.dot(this.lossyScale))
+        //    .negate()
+        //    .add(this.lossyScale);
+
+        // Find largest scale components from raw/lossy on the rotation plane
+        //const maxAbsScaleOnRotationPlane = this.vectorMax(this.vectorAbs(rawScaleOnRotationPlane, lossyScaleOnRotationPlane));
+
+        // The dominant scale axis on the rotation plane is where the points that move the most
+        // live when we have pure rotation and no translation
+        //const dominantScaleAxis = this.dominantAxis(maxAbsScaleOnRotationPlane);
 
         // Our cross-point lives at the midpoint of the delta rotation
         // since the optimal delta path rotates towards the translation
@@ -594,8 +787,11 @@ export class Viewer {
                             .normalize();
         }
 
+        // Simply scale the sphere by its radius
+        errorPoint.multiplyScalar(sphereRadius);
+
         // Calculate the error of our desired point, it should match the max error we found
-        console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
+        console.log(`Computed point error: ${this.computeVertexErrorNS(errorPoint)} (${errorPoint.x}, ${errorPoint.y}, ${errorPoint.z})`);
 
         // To compute the max error from the rotation delta, we proceed as follows:
         // We first take the quaternion dot product between the raw and lossy rotations
@@ -605,7 +801,6 @@ export class Viewer {
         // We can then use the angle cosine and the sphere radius to find the adjacent side of our triangle
         // Using the hypothenus and the adjacent side, we can compute the other side by leveraging the right-angle
         // This yields half the max rotation error
-        const sphereRadius = 1.0;
         const rawLossyQuatDot = this.rawRotation.dot(this.lossyRotation);
         const rawLossyErrorTriangleAdjacent = rawLossyQuatDot * sphereRadius;
         const halfMaxDeltaRotationError =
