@@ -166,6 +166,26 @@ export class Viewer {
         requestAnimationFrame(this.animate);
     }
 
+    isMode2D() {
+        switch (this.uiState.mode) {
+            case '2D Displacement':
+            case '2D Error Metric':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    isMode3D() {
+        switch (this.uiState.mode) {
+            case '3D Displacement':
+            case '3D Error Metric':
+                return true;
+            default:
+                return false;
+        }
+    }
+
     updateMode() {
         if (this.currentMode === this.uiState.mode) {
             return; // Same mode, nothing to do
@@ -204,21 +224,16 @@ export class Viewer {
     }
 
     resetCamera() {
-        switch (this.uiState.mode) {
-            case '2D Displacement':
-            case '2D Error Metric':
-                // 2D camera
-                this.camera.position.x = 0.0;
-                this.camera.position.y = 0.0;
-                this.camera.position.z = 5.0;
-                break;
-            case '3D Displacement':
-            case '3D Error Metric':
-                // 3D camera
-                this.camera.position.x = -6.0;
-                this.camera.position.y = 3.0;
-                this.camera.position.z = 2.2;
-                break;
+        if (this.isMode2D()) {
+            // 2D camera
+            this.camera.position.x = 0.0;
+            this.camera.position.y = 0.0;
+            this.camera.position.z = 5.0;
+        } else {
+            // 3D camera
+            this.camera.position.x = -6.0;
+            this.camera.position.y = 3.0;
+            this.camera.position.z = 2.2;
         }
 
         this.prevCameraPosition = this.camera.position.clone();
