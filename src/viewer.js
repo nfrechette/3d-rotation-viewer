@@ -27,6 +27,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'dat.gui';
 import * as d3 from "d3";
 
+const VIEWER_MODES = [
+    //'2D Displacement',
+    //'2D Error Metric',
+    //'3D Displacement',    // TODO: show largest displacement for single transform
+    '3D Error Metric',
+];
+
 export class Viewer {
 
     constructor(el) {
@@ -53,6 +60,7 @@ export class Viewer {
             lossyScaleY: 1.0,
             lossyScaleZ: 1.0,
             showMaxErrorLocation: true,
+            mode: VIEWER_MODES[0],  // 3D Error Metric
             isDirty: true,
         };
 
@@ -688,6 +696,7 @@ export class Viewer {
         [
             this.optionsFolder.add(this.state, 'numPoints', 10, 10000, 1),
             this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
+            this.optionsFolder.add(this.state, 'mode', VIEWER_MODES),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         [
