@@ -688,7 +688,7 @@ export class Viewer {
         [
             this.optionsFolder.add(this.state, 'numPoints', 10, 10000, 1),
             this.optionsFolder.add(this.state, 'showMaxErrorLocation'),
-        ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         [
             this.rawTransformFolder.add(this.state, 'rawAxisYaw', -180.0, 180.0, 0.1),
@@ -700,7 +700,7 @@ export class Viewer {
             this.rawTransformFolder.add(this.state, 'rawScaleX', -5.0, 5.0, 0.1),
             this.rawTransformFolder.add(this.state, 'rawScaleY', -5.0, 5.0, 0.1),
             this.rawTransformFolder.add(this.state, 'rawScaleZ', -5.0, 5.0, 0.1),
-        ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         [
             this.lossyTransformFolder.add(this.state, 'lossyAxisYaw', -180.0, 180.0, 0.1),
@@ -712,7 +712,7 @@ export class Viewer {
             this.lossyTransformFolder.add(this.state, 'lossyScaleX', -5.0, 5.0, 0.1),
             this.lossyTransformFolder.add(this.state, 'lossyScaleY', -5.0, 5.0, 0.1),
             this.lossyTransformFolder.add(this.state, 'lossyScaleZ', -5.0, 5.0, 0.1),
-        ].forEach((ctrl) => ctrl.onChange(() => this.state.isDirty = true));
+        ].forEach((ctrl) => ctrl.onFinishChange(() => this.state.isDirty = true));
 
         const guiWrap = document.createElement('div');
         this.el.appendChild(guiWrap);
