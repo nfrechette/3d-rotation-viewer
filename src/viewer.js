@@ -41,6 +41,8 @@ export class Viewer {
 
         this.state = {
             numPoints: 4000,
+            showMaxErrorLocation: true,
+            mode: VIEWER_MODES[0],  // 3D Error Metric
             mode3DMetric: {
                 rawAxisYaw: 0.0,
                 rawAxisPitch: 0.0,
@@ -61,8 +63,6 @@ export class Viewer {
                 lossyScaleY: 1.0,
                 lossyScaleZ: 1.0,
             },
-            showMaxErrorLocation: true,
-            mode: VIEWER_MODES[0],  // 3D Error Metric
             isDirty: true,
         };
 
