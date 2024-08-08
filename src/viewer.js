@@ -65,6 +65,12 @@ export class Viewer {
             },
             isDirty: true,
         };
+        this.guiFolders = {
+            mode2DDisp: {},
+            mode2DMetric: {},
+            mode3DDisp: {},
+            mode3DMetric: {},
+        };
 
         this.transformWidgets = {};
 
@@ -688,43 +694,43 @@ export class Viewer {
     setupGUI() {
         const gui = this.gui = new GUI({ autoPlace: false, width: 350, hideable: true });
 
-        this.optionsFolder = gui.addFolder('Options');
-        this.optionsFolder.closed = false;
+        this.guiFolders.optionsFolder = gui.addFolder('Options');
+        this.guiFolders.optionsFolder.closed = false;
 
-        this.rawTransformFolder = gui.addFolder('Raw Transform');
-        this.rawTransformFolder.closed = true;
+        this.guiFolders.mode3DMetric.rawTransformFolder = gui.addFolder('Raw Transform');
+        this.guiFolders.mode3DMetric.rawTransformFolder.closed = true;
 
-        this.lossyTransformFolder = gui.addFolder('Lossy Transform');
-        this.lossyTransformFolder.closed = false;
+        this.guiFolders.mode3DMetric.lossyTransformFolder = gui.addFolder('Lossy Transform');
+        this.guiFolders.mode3DMetric.lossyTransformFolder.closed = false;
 
         [
-            this.optionsFolder.add(this.uiState, 'numPoints', 10, 10000, 1),
-            this.optionsFolder.add(this.uiState, 'showMaxErrorLocation'),
-            this.optionsFolder.add(this.uiState, 'mode', VIEWER_MODES),
+            this.guiFolders.optionsFolder.add(this.uiState, 'numPoints', 10, 10000, 1),
+            this.guiFolders.optionsFolder.add(this.uiState, 'showMaxErrorLocation'),
+            this.guiFolders.optionsFolder.add(this.uiState, 'mode', VIEWER_MODES),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         [
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisYaw', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisPitch', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAngle', -180.0, 180.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationZ', -20.0, 20.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
-            this.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleZ', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisYaw', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAxisPitch', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawAngle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawTranslationZ', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleY', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.rawTransformFolder.add(this.uiState.mode3DMetric, 'rawScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         [
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisYaw', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisPitch', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationZ', -20.0, 20.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
-            this.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleZ', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisYaw', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAxisPitch', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyAngle', -180.0, 180.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationX', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationY', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyTranslationZ', -20.0, 20.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleX', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleY', -5.0, 5.0, 0.1),
+            this.guiFolders.mode3DMetric.lossyTransformFolder.add(this.uiState.mode3DMetric, 'lossyScaleZ', -5.0, 5.0, 0.1),
         ].forEach((ctrl) => ctrl.onFinishChange(() => this.uiState.isDirty = true));
 
         const guiWrap = document.createElement('div');
