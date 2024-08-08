@@ -102,6 +102,8 @@ export class Viewer {
             mode3DMetric: {},
         };
 
+        this.currentMode = '';
+
         this.transformWidgets = {};
 
         this.rawRotation = new Quaternion();
@@ -148,6 +150,10 @@ export class Viewer {
         let shouldRender = false;
 
         if (this.uiState.isDirty) {
+            if (this.currentMode != this.uiState.mode) {
+                this.updateMode();
+            }
+
             this.updateSphere();
             this.updateTransforms();
             this.calculateError();
@@ -167,6 +173,36 @@ export class Viewer {
         }
 
         requestAnimationFrame(this.animate);
+    }
+
+    updateMode() {
+        // Hide and reset the UI
+        this.guiFolders.mode2DDisp.transformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode2DMetric.rawTransformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode2DMetric.lossyTransformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode3DDisp.transformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode3DMetric.rawTransformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode3DMetric.lossyTransformFolder.domElement.style.display = 'none';
+
+        switch (this.uiState.mode) {
+            case '2D Displacement':
+                this.guiFolders.mode2DDisp.transformFolder.domElement.style.display = '';
+                break;
+            case '2D Error Metric':
+                this.guiFolders.mode2DMetric.rawTransformFolder.domElement.style.display = '';
+                this.guiFolders.mode2DMetric.lossyTransformFolder.domElement.style.display = '';
+                break;
+            case '3D Displacement':
+                this.guiFolders.mode3DDisp.transformFolder.domElement.style.display = '';
+                break;
+            case '3D Error Metric':
+                this.guiFolders.mode3DMetric.rawTransformFolder.domElement.style.display = '';
+                this.guiFolders.mode3DMetric.lossyTransformFolder.domElement.style.display = '';
+                break;
+        }
+
+        // Set our new mode
+        this.currentMode = this.uiState.mode;
     }
 
     setupCamera() {
@@ -728,20 +764,16 @@ export class Viewer {
         this.guiFolders.optionsFolder.closed = false;
 
         this.guiFolders.mode2DDisp.transformFolder = gui.addFolder('2D Transform');
-        this.guiFolders.mode2DDisp.transformFolder.closed = true;
-        this.guiFolders.mode2DDisp.transformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode2DDisp.transformFolder.closed = false;
 
         this.guiFolders.mode2DMetric.rawTransformFolder = gui.addFolder('Raw 2D Transform');
         this.guiFolders.mode2DMetric.rawTransformFolder.closed = true;
-        this.guiFolders.mode2DMetric.rawTransformFolder.domElement.style.display = 'none';
 
         this.guiFolders.mode2DMetric.lossyTransformFolder = gui.addFolder('Lossy 2D Transform');
         this.guiFolders.mode2DMetric.lossyTransformFolder.closed = false;
-        this.guiFolders.mode2DMetric.lossyTransformFolder.domElement.style.display = 'none';
 
         this.guiFolders.mode3DDisp.transformFolder = gui.addFolder('3D Transform');
-        this.guiFolders.mode3DDisp.transformFolder.closed = true;
-        this.guiFolders.mode3DDisp.transformFolder.domElement.style.display = 'none';
+        this.guiFolders.mode3DDisp.transformFolder.closed = false;
 
         this.guiFolders.mode3DMetric.rawTransformFolder = gui.addFolder('Raw 3D Transform');
         this.guiFolders.mode3DMetric.rawTransformFolder.closed = true;
