@@ -323,9 +323,9 @@ export class Viewer {
         dotGeometry.setAttribute('position', new BufferAttribute(this.sphereVerticesArray, 3));
         dotGeometry.setAttribute('color', new BufferAttribute(this.sphereVerticesColorArray, 3));
         const dotMaterial = new PointsMaterial({ size: 0.1, vertexColors: true });
-        const dot = new Points(dotGeometry, dotMaterial);
-        this.sphere = dot;
-        this.scene.add(dot);
+        const sphere = new Points(dotGeometry, dotMaterial);
+        this.sphere = sphere;
+        this.scene.add(sphere);
     }
 
     buildWidgetLines() {
