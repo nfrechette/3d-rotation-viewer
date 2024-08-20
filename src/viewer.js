@@ -547,6 +547,7 @@ export class Viewer {
 
         const rawTranslationLineVertices = this.transformWidgets.translation.raw.geometry.attributes.position.array;
         this.rawTranslation.toArray(rawTranslationLineVertices, 3);
+        this.transformWidgets.translation.raw.computeLineDistances();
         this.transformWidgets.translation.raw.geometry.attributes.position.needsUpdate = true;
 
         const lossyTranslationLineVertices = this.transformWidgets.translation.lossy.geometry.attributes.position.array;
