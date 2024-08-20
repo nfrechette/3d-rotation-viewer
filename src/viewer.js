@@ -413,6 +413,8 @@ export class Viewer {
             this.scene.remove(this.lossyTranslationLine);
             this.lossyTranslationLine = null;
         }
+
+        this.transformWidgets = {};
     }
 
     updateTransforms() {
