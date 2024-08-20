@@ -754,7 +754,7 @@ export class Viewer {
             );
     }
 
-    computeVertexError(vertex) {
+    computeVertexMetricError(vertex) {
         // qvv_mul_point3:
         // vector_add(quat_mul_vector3(vector_mul(qvv.scale, point), qvv.rotation), qvv.translation);
 
@@ -778,7 +778,7 @@ export class Viewer {
         let maxError = -10000000.0;
 
         this.sphereVertices.forEach((v) => {
-            const error = this.computeVertexError(v);
+            const error = this.computeVertexMetricError(v);
             this.errorPerVertex.push(error);
 
             minError = Math.min(minError, error);
@@ -912,7 +912,7 @@ export class Viewer {
         }
 
         // Calculate the error of our desired point, it should match the max error we found
-        console.log(`Computed point error: ${this.computeVertexError(errorPoint)}`);
+        console.log(`Computed point error: ${this.computeVertexMetricError(errorPoint)}`);
 
         // To compute the max error from the rotation delta, we proceed as follows:
         // We first take the quaternion dot product between the raw and lossy rotations
