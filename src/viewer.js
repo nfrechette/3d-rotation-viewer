@@ -151,6 +151,7 @@ export class Viewer {
             if (this.isMode2D()) {
                 this.updateCircle();
                 this.updateTransforms();
+                this.calculateError();
             } else {
                 this.updateSphere();
                 this.updateTransforms();
@@ -774,6 +775,18 @@ export class Viewer {
             );
     }
 
+    computeVertexDispError(vertex) {
+        // qvv_mul_point3:
+        // vector_add(quat_mul_vector3(vector_mul(qvv.scale, point), qvv.rotation), qvv.translation);
+
+        const dispVertex = vertex.clone()
+            .multiply(this.scale)
+            .applyQuaternion(this.rotation)
+            .add(this.translation);
+
+        return vertex.distanceTo(dispVertex);
+    }
+
     computeVertexMetricError(vertex) {
         // qvv_mul_point3:
         // vector_add(quat_mul_vector3(vector_mul(qvv.scale, point), qvv.rotation), qvv.translation);
@@ -797,15 +810,19 @@ export class Viewer {
         let minError = 10000000.0;
         let maxError = -10000000.0;
 
-        this.sphereVertices.forEach((v) => {
-            const error = this.computeVertexMetricError(v);
+        const errorFun = this.isModeDisp() ? this.computeVertexDispError : this.computeVertexMetricError;
+        const shapeVertices = this.isMode2D() ? this.circleVertices : this.sphereVertices;
+
+        shapeVertices.forEach((v) => {
+            const error = errorFun.call(this, v);
             this.errorPerVertex.push(error);
 
             minError = Math.min(minError, error);
             maxError = Math.max(maxError, error);
         });
 
-        console.log(`Sphere max error: ${maxError}`);
+        const shapeLabel = this.isMode2D() ? 'Circle' : 'Sphere';
+        console.log(`${shapeLabel} max error: ${maxError}`);
 
         // If we don't have any error, we use: [0.0, 2.0]
         if ((maxError - minError) < 0.000001) {
@@ -820,16 +837,17 @@ export class Viewer {
             normalizedErrorPerVertex.push(normalizedError);
         });
 
-        const sphereVertexColors = this.sphere.geometry.attributes.color.array;
+        const shape = this.isMode2D() ? this.circle : this.sphere;
+        const shapeVertexColors = shape.geometry.attributes.color.array;
         normalizedErrorPerVertex.forEach((error, vertexIndex) => {
             const hue = (1.0 - error) * 240.0;
             const saturation = 100.0;
             const lightness = 50.0;
 
             const color = new Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-            color.toArray(sphereVertexColors, vertexIndex * 3);
+            color.toArray(shapeVertexColors, vertexIndex * 3);
         });
-        this.sphere.geometry.attributes.color.needsUpdate = true;
+        shape.geometry.attributes.color.needsUpdate = true;
     }
 
     updateErrorLocation() {
