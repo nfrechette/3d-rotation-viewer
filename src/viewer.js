@@ -194,6 +194,26 @@ export class Viewer {
         }
     }
 
+    isModeDisp() {
+        switch (this.uiState.mode) {
+            case '2D Displacement':
+            case '3D Displacement':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    isModeMetric() {
+        switch (this.uiState.mode) {
+            case '2D Error Metric':
+            case '3D Error Metric':
+                return true;
+            default:
+                return false;
+        }
+    }
+
     updateMode() {
         if (this.currentMode === this.uiState.mode) {
             return; // Same mode, nothing to do
