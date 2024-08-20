@@ -106,6 +106,9 @@ export class Viewer {
 
         this.transformWidgets = {};
 
+        this.rotation = new Quaternion();
+        this.translation = new Vector3();
+        this.scale = new Vector3();
         this.rawRotation = new Quaternion();
         this.rawTranslation = new Vector3();
         this.rawScale = new Vector3();
@@ -404,6 +407,11 @@ export class Viewer {
             this.transformLines = null;
         }
 
+        if (this.translationLine != null) {
+            this.scene.remove(this.translationLine);
+            this.translationLine = null;
+        }
+
         if (this.rawTranslationLine != null) {
             this.scene.remove(this.rawTranslationLine);
             this.rawTranslationLine = null;
@@ -420,6 +428,7 @@ export class Viewer {
     updateTransforms() {
         switch (this.uiState.mode) {
             case '2D Displacement':
+                this.update2DDistTransform();
                 break;
             case '2D Error Metric':
                 break;
@@ -429,6 +438,89 @@ export class Viewer {
                 this.update3DMetricTransforms();
                 break;
         }
+    }
+
+    build2DDispWidgetLines() {
+        if (this.transformLines != null) {
+            return;
+        }
+
+        const vertices = [
+            0, 0, 0, 0, 0, 0,    // dir     [0, 3]
+            0, 0, 0, 0, 0, 0,    // roll    [6, 9]
+        ];
+
+        const colors = [
+            0, 0, 1, 0, 0, 1,    // dir (blue)
+            0, 0, 1, 0, 0, 1,    // roll (blue)
+        ];
+
+        const geometry = new BufferGeometry();
+        geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+
+        const material = new LineBasicMaterial({ vertexColors: true, toneMapped: false });
+        const transformLines = new LineSegments(geometry, material);
+
+        this.transformLines = transformLines;
+        this.scene.add(transformLines);
+
+        const yellowColor = 0xffff00;
+        const translationMaterial = new LineBasicMaterial({
+            color: yellowColor
+        });
+
+        const points = [];
+        points.push(new Vector3(0, 0, 0));
+        points.push(new Vector3(0, 0, 0));
+
+        const translationGeometry = new BufferGeometry().setFromPoints(points);
+        const translationLine = new Line(translationGeometry, translationMaterial);
+        this.translationLine = translationLine;
+        this.scene.add(translationLine);
+
+        this.transformWidgets =
+        {
+            translation: translationLine,
+        };
+    }
+
+    update2DDistTransform() {
+        this.build2DDispWidgetLines();
+
+        // Frame of reference (right handed):
+        // X+ = Red (right)
+        // Y+ = Green (up)
+        // Z- = Blue (forward)
+        //
+        // Our circle is on the XY plane, our rotation axis is thus around Z
+
+        const axisLength = 5.0;
+        const angleLength = 1.5;
+
+        const uiState = this.uiState.mode2DDisp;
+
+        // Setup our transform
+        const angle = MathUtils.degToRad(uiState.angle);
+
+        const rotationAxis = new Vector3(0.0, 0.0, axisLength);
+        this.rotation.setFromAxisAngle(rotationAxis.clone().normalize(), angle);
+        const rotationAngle = new Vector3(angleLength, 0.0, 0.0)
+            .applyQuaternion(this.rotation)
+            .add(rotationAxis);
+        this.translation.set(uiState.translationX, uiState.translationY, 0.0);
+        this.scale.set(uiState.scaleX, uiState.scaleY, 1.0);
+
+        // Update the line segments that highlights the transform
+        const transformLinesVertices = this.transformLines.geometry.attributes.position.array;
+        rotationAxis.toArray(transformLinesVertices, 3);
+        rotationAxis.toArray(transformLinesVertices, 6);
+        rotationAngle.toArray(transformLinesVertices, 9);
+        this.transformLines.geometry.attributes.position.needsUpdate = true;
+
+        const translationLineVertices = this.transformWidgets.translation.geometry.attributes.position.array;
+        this.translation.toArray(translationLineVertices, 3);
+        this.transformWidgets.translation.geometry.attributes.position.needsUpdate = true;
     }
 
     build3DMetricWidgetLines() {
