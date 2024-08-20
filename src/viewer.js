@@ -152,6 +152,7 @@ export class Viewer {
                 this.updateCircle();
                 this.updateTransforms();
                 this.calculateError();
+                this.updateErrorHistogram();
             } else {
                 this.updateSphere();
                 this.updateTransforms();
@@ -253,6 +254,7 @@ export class Viewer {
         this.resetCircle();
         this.resetSphere();
         this.resetTransforms();
+        this.resetErrorHistogram();
     }
 
     resetCamera() {
@@ -671,12 +673,20 @@ export class Viewer {
         this.transformWidgets.translation.lossy.geometry.attributes.position.needsUpdate = true;
     }
 
+    resetErrorHistogram() {
+        if (this.errorHistogram != null) {
+            this.el.removeChild(this.errorHistogram.wrapDiv);
+            this.errorHistogram = null;
+        }
+    }
+
     buildErrorHistogram() {
         if (this.errorHistogram != null) {
             return;
         }
 
         this.errorHistogram = {
+            wrapDiv: null,
             svg: null,
             curve: null,
 
@@ -690,7 +700,7 @@ export class Viewer {
         };
 
         const histogramWrap = document.createElement('div');
-        this.el.appendChild(histogramWrap);
+        this.errorHistogram.wrapDiv = this.el.appendChild(histogramWrap);
         histogramWrap.id = 'histogram';
         histogramWrap.classList.add('histogram-wrap');
 
