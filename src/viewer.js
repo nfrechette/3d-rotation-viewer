@@ -981,7 +981,7 @@ export class Viewer {
         }
 
         // Calculate the error of our desired point, it should match the max error we found
-        console.log(`Computed point error: ${this.computeVertexMetricError(errorPoint)}`);
+        console.log(`Computed point error: ${this.computeVertexMetricError(errorPoint)} for point [${errorPoint.x}, ${errorPoint.y}, ${errorPoint.z}]`);
 
         // To compute the max error from the rotation delta, we proceed as follows:
         // We first take the quaternion dot product between the raw and lossy rotations
