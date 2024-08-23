@@ -150,15 +150,24 @@ export class Viewer {
 
             if (this.isMode2D()) {
                 this.updateCircle();
-                this.updateTransforms();
-                this.calculateError();
-                this.updateErrorHistogram();
             } else {
                 this.updateSphere();
-                this.updateTransforms();
-                this.calculateError();
-                this.updateErrorHistogram();
-                this.updateErrorLocation();
+            }
+
+            this.updateTransforms();
+            this.calculateError();
+            this.updateErrorHistogram();
+
+            switch (this.uiState.mode) {
+                case '2D Displacement':
+                    break;
+                case '2D Error Metric':
+                    break;
+                case '3D Displacement':
+                    break;
+                case '3D Error Metric':
+                    this.update3DMetricErrorLocation();
+                    break;
             }
 
             this.uiState.isDirty = false;
@@ -872,7 +881,7 @@ export class Viewer {
         }
     }
 
-    updateErrorLocation() {
+    update3DMetricErrorLocation() {
         if (this.errorPlane == null) {
             const whiteColor = 0xffffff;
 
