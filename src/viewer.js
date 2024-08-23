@@ -28,7 +28,7 @@ import { GUI } from 'dat.gui';
 import * as d3 from "d3";
 
 const VIEWER_MODES = [
-    //'2D Displacement',
+    '2D Displacement',
     //'2D Error Metric',
     //'3D Displacement',    // TODO: show largest displacement for single transform
     '3D Error Metric',
@@ -160,6 +160,7 @@ export class Viewer {
 
             switch (this.uiState.mode) {
                 case '2D Displacement':
+                    this.update2DDispErrorLocation();
                     break;
                 case '2D Error Metric':
                     break;
@@ -873,12 +874,137 @@ export class Viewer {
     resetErrorLocation() {
         if (this.errorPlane != null) {
             this.scene.remove(this.errorPlaneHelper);
-            this.scene.remove(this.errorPointLine);
 
             this.errorPlane = null;
             this.errorPlaneHelper = null;
+        }
+
+        if (this.errorPointLine != null) {
+            this.scene.remove(this.errorPointLine);
+
             this.errorPointLine = null;
         }
+    }
+
+    update2DDispErrorLocation() {
+        if (this.errorPointLine == null) {
+            const whiteColor = 0xffffff;
+
+            const errorPointMaterial = new LineBasicMaterial({
+                color: whiteColor
+            });
+
+            const points = [];
+            points.push(new Vector3(0, 0, 0));
+            points.push(new Vector3(0, 0, 0));
+
+            const errorPointGeometry = new BufferGeometry().setFromPoints(points);
+            const errorPointLine = new Line(errorPointGeometry, errorPointMaterial);
+            this.errorPointLine = errorPointLine;
+            this.scene.add(errorPointLine);
+        }
+
+        const errorPlaneNormal = new Vector3(this.rotation.x, this.rotation.y, this.rotation.z).normalize();
+        const rotationAngleRad = Math.acos(MathUtils.clamp(this.rotation.w, -1.0, 1.0)) * 2.0;
+
+        // Half the rotation, negated so we can remove it
+        const negHalfRotation = new Quaternion().setFromAxisAngle(errorPlaneNormal, rotationAngleRad * -0.5);
+
+        // We project the translation onto error plane
+        // The points that rotate the most lives on it
+        const translationCrossNormal = this.translation.clone()
+            .cross(errorPlaneNormal)
+            .normalize();
+
+        // Our cross-point lives at the midpoint of the rotation
+        // since the optimal path rotates towards the translation
+        // On error plane, we remove half the rotation
+        let errorPoint = translationCrossNormal.clone()
+            .applyQuaternion(negHalfRotation);
+
+        // If the point ends up at zero, it means that the translation is colinear
+        // with the rotation plane normal and thus all points on that plane
+        // will move by the same amount. As such, we can pick any point on the plane.
+        //
+        // If the rotation is zero, then all points move by the same amount of
+        // translation and they thus all have the same error. As such, we can pick
+        // any point on the circle.
+        if (errorPoint.lengthSq() < 0.0001) {
+            // Generate a random point on our circle
+            // To ensure consistent results, we pick between hardcoded perpendicular results
+            let randomPoint = new Vector3(0.2, 0.7, 0.0).normalize();
+
+            // Make sure it isn't colinear with our plane normal
+            if (Math.abs(randomPoint.dot(errorPlaneNormal)) > 0.9) {
+                randomPoint.set(0.2, 0.7, 0.0).normalize();
+            }
+
+            // Project it onto our plane
+            // If the plane normal is zero as a result of a zero rotation,
+            // we'll remove nothing from the random point and thus use it as-is.
+            errorPoint = randomPoint.sub(errorPlaneNormal.clone()
+                                            .multiplyScalar(randomPoint.dot(errorPlaneNormal)))
+                            .normalize();
+        }
+
+        // Calculate the error of our desired point, it should match the max error we found
+        console.log(`Computed point error: ${this.computeVertexDispError(errorPoint)} for point [${errorPoint.x}, ${errorPoint.y}, ${errorPoint.z}]`);
+
+        // To compute the max error from the rotation, we proceed as follows:
+        // We first take the quaternion W component
+        // This gives us the cosine of the half rotation angle (remember that quaternions use a half angle representation)
+        // We know the circle radius (1.0 in our case) and we can create a right-angle by splitting
+        // the max error contribution in two equal halves.
+        // We can then use the angle cosine and the circle radius to find the adjacent side of our triangle
+        // Using the hypothenus and the adjacent side, we can compute the other side by leveraging the right-angle
+        // This yields half the max rotation error
+        const circleRadius = 1.0;
+        const rotationErrorTriangleAdjacent = this.rotation.w * circleRadius;
+        const halfMaxRotationError =
+            Math.sqrt(Math.max((circleRadius * circleRadius) - (rotationErrorTriangleAdjacent * rotationErrorTriangleAdjacent), 0.0))
+        const maxRotationError = halfMaxRotationError * 2.0;
+        //console.log(`Max rotation error: ${maxRotationError}`);
+
+        // The max translation error is simply its length
+        //console.log(`Max translation error: ${this.translation.length()}`);
+
+        // To compute the combined max error of the rotation and translation, we observe that
+        // they form a triangle where one side has length equal to the max rotation error and
+        // lives on the rotation plane. Another side has the translation.
+        // Both of them form a triangle by forming an angle between them.
+        // To avoid computing angles and using trigonometric functions, we instead build a larger
+        // triangle where the hypothenus is the translation and one side is the projection
+        // of the translation along the rotation plane normal. Using both sides, we can
+        // compute the third using the square-root. This gives us a second portion of a larger
+        // segment along the rotation plane. We add this second portion to our max rotation
+        // error to form a larger right-angled triangle. That triangle still has the same side
+        // as the first along the rotation plane normal. Again, using a square-root, we can compute
+        // our third and final side we are looking for.
+        const translationAlongPlane = this.translation.dot(errorPlaneNormal);
+        const translationAlongPlaneSq = translationAlongPlane * translationAlongPlane;
+        const innerSide =
+            Math.sqrt(Math.max(this.translation.lengthSq() - translationAlongPlaneSq, 0.0));
+        const innerFullSide = innerSide + maxRotationError;
+        const maxTransformError =
+            Math.sqrt(Math.max(translationAlongPlaneSq + (innerFullSide * innerFullSide), 0.0));
+
+        // Edge cases:
+        //   - Note that when the translation is zero, our distance along the normal will
+        //     also be zero. This yields the translation contribution along the rotation plane
+        //     to also be zero. We correctly end up taking the square-root of the squared max
+        //     rotation error.
+        //   - When the rotation is zero, only the translation portion will remain along
+        //     the rotation plane normal (we can use any direction for the plane normal). This leaves
+        //     us with a single triangle and we correctly re-compute the translation edge length.
+        //   - When both are zero, we end up with zero as well by construction.
+
+        console.log(`Computed max error: ${maxTransformError}`);
+
+        // Update our error objects
+        const errorPointLineSize = this.uiState.showMaxErrorLocation ? 2.0 : 0;
+        const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
+        errorPoint.clone().multiplyScalar(errorPointLineSize).toArray(errorPointLineVertices, 3);
+        this.errorPointLine.geometry.attributes.position.needsUpdate = true;
     }
 
     update3DMetricErrorLocation() {
