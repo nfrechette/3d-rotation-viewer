@@ -255,6 +255,7 @@ export class Viewer {
         this.resetSphere();
         this.resetTransforms();
         this.resetErrorHistogram();
+        this.resetErrorLocation();
     }
 
     resetCamera() {
@@ -858,6 +859,17 @@ export class Viewer {
             color.toArray(shapeVertexColors, vertexIndex * 3);
         });
         shape.geometry.attributes.color.needsUpdate = true;
+    }
+
+    resetErrorLocation() {
+        if (this.errorPlane != null) {
+            this.scene.remove(this.errorPlaneHelper);
+            this.scene.remove(this.errorPointLine);
+
+            this.errorPlane = null;
+            this.errorPlaneHelper = null;
+            this.errorPointLine = null;
+        }
     }
 
     updateErrorLocation() {
