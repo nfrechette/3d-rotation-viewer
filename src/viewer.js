@@ -1534,17 +1534,31 @@ export class Viewer {
             const U = (scaleX * scaleX) + (2.0 * scaleX * scaleY) - (4.0 * scaleX * cosAngle) + (scaleY * scaleY) - (4.0 * scaleY * cosAngle) + (4.0 * sinAngle * sinAngle) + (4.0 * cosAngle * cosAngle);
             const V = Math.sqrt((scaleX * scaleX) + (2.0 * scaleX * scaleY) - (4.0 * scaleX * cosAngle) + (scaleY * scaleY) - (4.0 * scaleY * cosAngle) + 4.0);
 
-            const x0 = (1.0 / Math.sqrt(2.0)) * Math.sqrt(((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) + ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) + ((scaleY * V) / U) - ((2.0 * cosAngle * V) / U));
-            const x1 = -x0;
-            const x2 = (1.0 / Math.sqrt(2.0)) * Math.sqrt(((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) - ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) - ((scaleY * V) / U) + ((2.0 * cosAngle * V) / U));
-            const x3 = -x2;
-            const x4 = -1.0;
-            const x5 = 1.0;
+            let xInner0 = ((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) + ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) + ((scaleY * V) / U) - ((2.0 * cosAngle * V) / U);
+            let xInner2 = ((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) - ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) - ((scaleY * V) / U) + ((2.0 * cosAngle * V) / U);
+
+            xInner0 = Math.max(xInner0, 0.0);
+            xInner2 = Math.max(xInner2, 0.0);
+
+            let x0 = (1.0 / Math.sqrt(2.0)) * Math.sqrt(xInner0);
+            let x1 = -x0;
+            let x2 = (1.0 / Math.sqrt(2.0)) * Math.sqrt(xInner2);
+            let x3 = -x2;
+            let x4 = -1.0;
+            let x5 = 1.0;
+
+            x0 = MathUtils.clamp(x0, -1.0, 1.0);
+            x1 = MathUtils.clamp(x1, -1.0, 1.0);
+            x2 = MathUtils.clamp(x2, -1.0, 1.0);
+            x3 = MathUtils.clamp(x3, -1.0, 1.0);
+            x4 = MathUtils.clamp(x4, -1.0, 1.0);
+            x5 = MathUtils.clamp(x5, -1.0, 1.0);
 
             const errorSqFun = function(x, scaleX, scaleY, sinAngle, cosAngle)
             {
-                const transformedX = (x * scaleX * cosAngle - scaleY * Math.sqrt(1.0 - (x * x)) * sinAngle - x);
-                const transformedY = (x * scaleX * sinAngle + scaleY * Math.sqrt(1.0 - (x * x)) * cosAngle - Math.sqrt(1 - (x * x)));
+                const y = Math.sqrt(1.0 - (x * x));
+                const transformedX = (x * scaleX * cosAngle - scaleY * y * sinAngle - x);
+                const transformedY = (x * scaleX * sinAngle + scaleY * y * cosAngle - y);
                 return (transformedX * transformedX) + (transformedY * transformedY);
             };
 
@@ -1578,18 +1592,20 @@ export class Viewer {
                 bestErrorSq0 = errorSq5;
             }
 
-            const errorSqFun2 = function(x, y, scaleX, sinAngle, cosAngle)
+            bestX = MathUtils.clamp(bestX, -1.0, 1.0);
+
+            const errorSqFun2 = function(x, y, scaleX, scaleY, sinAngle, cosAngle)
             {
-                const transformedX = (x * (scaleX * cosAngle - 1.0)) - (sinAngle * y);
-                const transformedY = (x * scaleX * sinAngle) + ((cosAngle - 1.0) * y);
+                const transformedX = (x * (scaleX * cosAngle - 1.0)) - (sinAngle * y * scaleY);
+                const transformedY = (x * scaleX * sinAngle) + ((scaleY * cosAngle - 1.0) * y);
                 return (transformedX * transformedX) + (transformedY * transformedY);
             };
 
             const y0 = Math.sqrt(1.0 - (bestX * bestX));
             const y1 = -y0;
 
-            const errorSq00 = errorSqFun2(bestX, y0, scaleX, sinAngle, cosAngle);
-            const errorSq01 = errorSqFun2(bestX, y1, scaleX, sinAngle, cosAngle);
+            const errorSq00 = errorSqFun2(bestX, y0, scaleX, scaleY, sinAngle, cosAngle);
+            const errorSq01 = errorSqFun2(bestX, y1, scaleX, scaleY, sinAngle, cosAngle);
 
             let bestY = y0;
             let bestErrorSq1 = errorSq00;
@@ -1600,10 +1616,10 @@ export class Viewer {
                 bestErrorSq1 = errorSq01;
             }
 
-            // Something not quite right with: R= 72.27, S= [1.23, 1.68]
-            // errorSqFun2 is incorrect!
+            const tmp0 = ((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) + ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) + ((scaleY * V) / U) - ((2.0 * cosAngle * V) / U);
+            const tmp1 = ((scaleX * scaleX) / U) + ((2.0 * scaleX * scaleY) / U) - ((4.0 * scaleX * cosAngle) / U) - ((scaleX * V) / U) + ((scaleY * scaleY) / U) + ((4.0 * cosAngle * cosAngle) / U) + ((4.0 * sinAngle * sinAngle) / U) - ((4.0 * scaleY * cosAngle) / U) - ((scaleY * V) / U) + ((2.0 * cosAngle * V) / U);
 
-            console.log(`x0=${x0}, x1=${x1}, x2=${x2}, x3=${x3}, x4=${x4}, x5=${x5}, y0=${y0}, y1=${y1}`);
+            console.log(`x0=${x0}, x1=${x1}, x2=${x2}, x3=${x3}, x4=${x4}, x5=${x5}, y0=${y0}, y1=${y1}, angle=${rotationAngleRad}, cos=${cosAngle}, sin=${sinAngle}, U=${U}, V=${V}, tmp0=${tmp0}, tmp1=${tmp1}`);
             console.log(`e0=${errorSq0}, e1=${errorSq1}, e2=${errorSq2}, e3=${errorSq3}, e4=${errorSq4}, e5=${errorSq5}, eA=${errorSq00}, eB=${errorSq01}`);
 
             errorPoint = new Vector3(bestX, bestY, 0.0);
