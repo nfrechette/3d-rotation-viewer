@@ -1425,6 +1425,24 @@ export class Viewer {
         //     x1 =  (1 / sqrt(2)) * sqrt((a^2 / U) + (2ab / U) - ((4a * cos(c)) / U) + (aV / U) + (b^2 / U) + ((4 * cos(c)^2) / U) + ((4 * sin(c)^2) / U) - ((4b * cos(c)) / U) + (bV / U) - ((2 * cos(c) * V) / U))
         //     x2 = -(1 / sqrt(2)) * sqrt((a^2 / U) + (2ab / U) - ((4a * cos(c)) / U) - (aV / U) + (b^2 / U) + ((4 * cos(c)^2) / U) + ((4 * sin(c)^2) / U) - ((4b * cos(c)) / U) - (bV / U) + ((2 * cos(c) * V) / U))
         //     x3 =  (1 / sqrt(2)) * sqrt((a^2 / U) + (2ab / U) - ((4a * cos(c)) / U) - (aV / U) + (b^2 / U) + ((4 * cos(c)^2) / U) + ((4 * sin(c)^2) / U) - ((4b * cos(c)) / U) - (bV / U) + ((2 * cos(c) * V) / U))
+        //
+        // |T * p - p|^2 = (with Sx = a, Sy = b, Rot Angle = c, Tx = u, Ty = v)
+        //     (ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x + u)^2 + (ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2) + v)^2
+        // Derive with: derive{(ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x + u)^2 + (ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2) + v)^2}
+        //     (2 * ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2) + v) * (a * sqrt(1 - x^2) * sin(c) - bx * cos(c) + x) / sqrt(1 - x^2) + 2 * (a * cos(c) + (bx * sin(c)) / sqrt(1 - x^2) - 1) * (ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x + u)
+        // Alternate form:
+        //     Let A = a * cos(c)
+        //     Let B = b * sin(c)
+        //     Let D = a * sin(c)
+        //     Let E = b * cos(c)
+        //     derive{(A*x - B * sqrt(1-x^2) - x + u)^2 + (D * x + E * sqrt(1-x^2) - sqrt(1-x^2) + v)^2} wrt x
+        //     2 * (A + Bx / sqrt(1 - x^2) - 1) * (Ax - B * sqrt(1 - x^2) + u - x) + 2 * (D - Ex / sqrt(1 - x^2) + x / sqrt(1 - x^2)) * (Dx + E * sqrt(1 - x^2) + v - sqrt(1 - x^2))
+        // Solve with: solve{(2 * ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2) + v) * (a * sqrt(1 - x^2) * sin(c) - bx * cos(c) + x) / sqrt(1 - x^2) + 2 * (a * cos(c) + (bx * sin(c)) / sqrt(1 - x^2) - 1) * (ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x + u)}
+
+        // wip: derive{(A*x - B * sqrt(1-x^2) - x + u)^2 + (D * x + E * sqrt(1-x^2) - sqrt(1-x^2) + v)^2} wrt x
+
+        // d/dx((a x cos(c) - b sqrt(1 - x^2) sin(c) - x + 13)^2 + (a x sin(c) + b sqrt(1 - x^2) cos(c) - sqrt(1 - x^2) + 17)^2)
+        // = (2 (a x sin(c) + b sqrt(1 - x^2) cos(c) - sqrt(1 - x^2) + 17) (a sqrt(1 - x^2) sin(c) - b x cos(c) + x))/sqrt(1 - x^2) + 2 (a cos(c) + (b x sin(c))/sqrt(1 - x^2) - 1) (a x cos(c) - b sqrt(1 - x^2) sin(c) - x + 13)
 
         // TODO: Work out formula with both XY scale
         // Find formula with matrix math
@@ -1515,6 +1533,7 @@ export class Viewer {
             errorPoint = new Vector3(bestX, bestY, 0.0);
         }
 
+        // Rot+scale only, stable
         {
             // E = (ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x)^2 + (ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2))^2
             //
@@ -1625,6 +1644,86 @@ export class Viewer {
             errorPoint = new Vector3(bestX, bestY, 0.0);
         }
 
+        // Rot+scale+trans wip
+        {
+            // The derivative of our error function is a quartic equation of the form: ax^4 + bx^3 + cx^2 + dx + e = 0
+            // We then divide every term by 'a' to bring it into its final form:        x^4 + ax^3 + bx^2 + cx + d = 0
+            // Its solution is thus given as follow (from wikipedia: https://planetmath.org/QuarticFormula)
+            // Let Part0  = b^2 - 3ac + 12d
+            // Let Part1  = 2b^3 - 9abc + 27c^2 + 27da^2 - 72bd
+            // Let Part2  = Part1 + sqrt(-4 * Part0^3 + Part1^2)
+            // Let Part3  = cbrt(2) * Part0
+            // Let Part4  = 3 * cbrt(Part2)
+            // Let Part5  = Part3 / Part4
+            // Let Part6  = cbrt(Part2 / 54)
+            // Let Part7  = sqrt((a^2 / 4) - (2b / 3) + Part5 + Part6)
+            // Let Part8  = -a^3 + 4ab - 8c
+            // Let Part9  = 4 * Part7
+            // Let Part10 = Part8 / Part9
+            // Let Part11 = sqrt((a^2 / 4) - (4b / 3) - Part5 - Part6 - Part10)
+            // Let Part12 = sqrt((a^2 / 4) - (4b / 3) - Part5 - Part6 + Part10)
+            //
+            // x0 = (-a / 4) - (1 / 2) * Part7 - (1 / 2) * Part11
+            // x1 = (-a / 4) - (1 / 2) * Part7 + (1 / 2) * Part11
+            // x2 = (-a / 4) + (1 / 2) * Part7 - (1 / 2) * Part12
+            // x3 = (-a / 4) + (1 / 2) * Part7 + (1 / 2) * Part12
+            //
+            // Let a = ?
+
+            // https://www.bbc.co.uk/bitesize/guides/zt4kkqt/revision/3
+            const test0 = this.solveQuartic(2.0, 9.0, -18.0, -71.0, -30.0);
+            console.log(`Quartic test0: ${test0.x}, ${test0.y}, ${test0.z}, ${test0.w}`);
+            console.log(`Quartic resu0: -2.0, 3.0, -5.0, -0.5`);
+
+            //    Let Part0 = 2c^3 - 9bcd + 27ad^2 + 27eb^2 - 72ace
+            //    Let Part1 = sqrt(Part0^2 - 4 * (c^2 - 3bd + 12ae)^3)
+            //    Let Part2 = cbrt(4 * (Part0 + Part1))
+            //    Let Part3 = cbrt(4 * (Part0 - Part1))
+            //    x = -3b (+/-) (sqrt(3 * (3b^2 - 8ac + 2a * Part2 + 2a * Part3 (+/-) sqrt(3 * (3b^2 - 8ac + 2a * (-1 + sqrt(-3)) / 2 * Part2 + 2a * (-1 - sqrt(-3)) / 2 * Part3)))
+
+            // E = (ax * cos(c) - b * sqrt(1 - x^2) * sin(c) - x + u)^2 + (ax * sin(c) + b * sqrt(1 - x^2) * cos(c) - sqrt(1 - x^2) + v)^2
+
+            // TODO:
+            // Express in terms of quaternion values, leads to a quartic function
+            // Compute a/b/c/d/e for quartic from transform values
+            // Solve quartic
+            // Compute error for roots, pick best
+        }
+
+        // Rot+scale+trans wip using derivative of matrix mul as functions
+        {
+            // If we express our equation as matrices, we have:
+            // err^2 = (Rot * Scale * [x, 0] - x)^2 + (Rot * Scale * [0, sqrt(1 - x^2)] - sqrt(1 - x^2))^2
+            // We can treat each matrix multiplication as applying a function
+            // err^2 = (Rot(Scale(x)) - x)^2 + (Rot(Scale(sqrt(1 - x^2))) - sqrt(1 - x^2))^2
+            // We can then take the derivative of each part and add them
+            // derive{(f(g(x)) - x)^2} + derive{(f(g(sqrt(1 - x^2))) - sqrt(1 - x^2))^2}
+            // d/dx =
+            //    2 * (Rot(Scale(x)) - x) * (Scale'(x) * Rot'(Scale(x)) - 1)
+            //    -
+            //    2 * x * (Rot(Scale(sqrt(1 - x^2))) - sqrt(1 - x^2)) * (Scale'(sqrt(1 - x^2)) * Rot'(Scale(sqrt(1 - x^2))) - 1) / sqrt(1 - x^2)
+            // The error function is maximized when its derivative is zero
+            // The derivative (Part A - Part B) will be zero if:
+            //    Part A = Part B = 0 (both parts are zero)
+            //    Part A = Part B != 0 (both parts are equal but not zero)
+            // Since Part A is simpler, we can find where it is zero and test if Part B is also zero at those solutions
+            // We can also equal one to the other and solve for x
+            // We can also express the Part B derivative as derive{(f(g(z(x))) - z(x))^2} where z(x) = sqrt(1 - x^2)
+            //    2 * z'(x) * (f(g(z(x))) - z(x)) * (g'(z(x)) * f'(g(z(x))) - 1)
+            // If we equal one to the other, aligning like terms
+            //    2 * 1     * (f(g(x))    - x)    * (g'(x)    * f'(g(x))    - 1)
+            //    =
+            //    2 * z'(x) * (f(g(z(x))) - z(x)) * (g'(z(x)) * f'(g(z(x))) - 1)
+            // We can observe that if any of the multiplied terms is zero, the whole part is zero
+            // but that makes it unlikely that the other part will be zero as well (these are the domain boundaries, 0 and 1)
+            // We can also observe that if every pair of like terms are equal, each part is equal to the other
+            // but that seems very unlikely. That would mean that z'(x) = 1 which is only true when x = 0 (domain boundary)
+            // And so if x isn't the domain boundary then each term must be different yet equal when multiplied
+            // Another possibility is for like terms to not be equal to each other, but to be equal to another unlike term
+            // For example, 1 * a * b = b * 1 * a, a simple permutation of the terms
+            // Another valid solution is for every term to evaluate to 1 but that is unlikely/impossible
+        }
+
         // We can further simplify our equation by dropping a scale variable
         // We can do so by removing the smallest scale component (or largest)
         // We will end up either with S = [a, 1] or S = [1, a]
@@ -1730,6 +1829,66 @@ export class Viewer {
         const errorPointLineVertices = this.errorPointLine.geometry.attributes.position.array;
         errorPoint.clone().multiplyScalar(errorPointLineSize).toArray(errorPointLineVertices, 3);
         this.errorPointLine.geometry.attributes.position.needsUpdate = true;
+    }
+
+    solveQuartic(a, b, c, d, e) {
+        // The derivative of our error function is a quartic equation of the form: ax^4 + bx^3 + cx^2 + dx + e = 0
+        // We then divide every term by 'a' to bring it into its final form:        x^4 + ax^3 + bx^2 + cx + d = 0
+        // Its solution is thus given as follow (from wikipedia: https://planetmath.org/QuarticFormula)
+        // Let Part0  = b^2 - 3ac + 12d
+        // Let Part1  = 2b^3 - 9abc + 27c^2 + 27da^2 - 72bd
+        // Let Part2  = Part1 + sqrt(-4 * Part0^3 + Part1^2)
+        // Let Part3  = cbrt(2) * Part0
+        // Let Part4  = 3 * cbrt(Part2)
+        // Let Part5  = Part3 / Part4
+        // Let Part6  = cbrt(Part2 / 54)
+        // Let Part7  = sqrt((a^2 / 4) - (2b / 3) + Part5 + Part6)
+        // Let Part8  = -a^3 + 4ab - 8c
+        // Let Part9  = 4 * Part7
+        // Let Part10 = Part8 / Part9
+        // Let Part11 = sqrt((a^2 / 4) - (4b / 3) - Part5 - Part6 - Part10)
+        // Let Part12 = sqrt((a^2 / 4) - (4b / 3) - Part5 - Part6 + Part10)
+        //
+        // x0 = (-a / 4) - (1 / 2) * Part7 - (1 / 2) * Part11
+        // x1 = (-a / 4) - (1 / 2) * Part7 + (1 / 2) * Part11
+        // x2 = (-a / 4) + (1 / 2) * Part7 - (1 / 2) * Part12
+        // x3 = (-a / 4) + (1 / 2) * Part7 + (1 / 2) * Part12
+
+        // We remap 'abcde' into 'abcd' by dividing everything by 'a'
+        //const invA = 1.0 / a;
+        //a = b * invA;
+        //b = c * invA;
+        //c = d * invA;
+        //d = e * invA;
+        const originalA = a;
+        a = b / originalA;
+        b = c / originalA;
+        c = d / originalA;
+        d = e / originalA;
+
+        const part0 = (b * b) - (3.0 * a * c) + (12.0 * d);
+        const part1 = (2.0 * b * b * b) - (9.0 * a * b * c) + (27.0 * c * c) + (27.0 * d * a * a) - (72.0 * b * d);
+        const part2 = part1 + Math.sqrt(Math.max((-4.0 * part0 * part0 * part0) + (part1 * part1), 0.0));
+        const part3 = Math.cbrt(2.0) * part0;
+        const part4 = 3.0 * Math.cbrt(part2);
+        const part5 = part3 / part4;
+        const part6 = Math.cbrt(part2 / 54.0);
+        const part7 = Math.sqrt(Math.max(((a * a) / 4.0) - ((2.0 * b) / 3.0) + part5 + part6, 0.0));
+        const part8 = -(a * a * a) + (4.0 * a * b) - (8.0 * c);
+        const part9 = 4.0 * part7;
+        const part10 = part8 / part9;
+        const part11 = Math.sqrt(Math.max(((a * a) / 4.0) - ((4.0 * b) / 3) - part5 - part6 - part10, 0.0));
+        const part12 = Math.sqrt(Math.max(((a * a) / 4.0) - ((4.0 * b) / 3) - part5 - part6 + part10, 0.0));
+
+        console.log(`quartic parts: ${part0}, ${part1}, ${part2}, ${part3}, ${part4}, ${part5}, ${part6}, ${part7}, ${part8}, ${part9}, ${part10}, ${part11}, ${part12}`);
+        console.log((-4.0 * part0 * part0 * part0) + (part1 * part1));
+
+        const x0 = (-a / 4.0) - (0.5 * part7) - (0.5 * part11);
+        const x1 = (-a / 4.0) - (0.5 * part7) + (0.5 * part11);
+        const x2 = (-a / 4.0) + (0.5 * part7) - (0.5 * part12);
+        const x3 = (-a / 4.0) + (0.5 * part7) + (0.5 * part12);
+
+        return new Quaternion(x0, x1, x2, x3);
     }
 
     update3DMetricErrorLocation() {
